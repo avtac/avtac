@@ -65,7 +65,7 @@ export default defineConfig({
           "purpose": "any"
         }
       ],
-      start_url: "/",
+      start_url: "/balance",
       display: "standalone",
       background_color: "#FFFFFF",
       theme_color: "#FFFFFF"
