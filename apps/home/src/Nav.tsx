@@ -6,8 +6,9 @@ function Nav() {
   return (
     <>
       <Header title='AVTAC' />
-      <a href={'/'}>Balance</a>
-      <a href={'/config'}>Balance Config</a>
+      <a href={'/'}>Home</a>
+      <a href={'/balance'}>Balance</a>
+      <a href={'/lcio'}>LCIO</a>
     </>
   )
 }

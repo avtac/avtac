@@ -72,7 +72,6 @@ export default defineConfig({
   })
   ],
   build: {
-    outDir: '../../dist/balance',
     emptyOutDir: true,
     rollupOptions: {
       input: {
@@ -80,7 +79,7 @@ export default defineConfig({
         config: resolve(root, 'pages/config/index.html'),
       },
       output: {
-        dir: 'dist',
+        dir: '../../dist/balance',
       }
     }
   }
