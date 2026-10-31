@@ -2,11 +2,13 @@
   display: flex;
   justify-content: space-between;
   align-items: stretch;
-  height: calc(100vh - 4rem - 18px * 2);
+
+  max-height: 100%;
+  flex: 1;
 
   #left {
     flex-grow: 1;
-    max-width: 30rem;
+    max-width: 33rem;
 
     #displayText {
       p {
@@ -37,7 +39,7 @@
 
   #right {
     overflow-y: auto;
-    min-width: 21rem;
+    min-width: 22.1rem;
   }
 }
 

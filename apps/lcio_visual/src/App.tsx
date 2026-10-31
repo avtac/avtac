@@ -4,6 +4,7 @@ import Visualizer from './Visualizer.tsx'
 import { type objectData, type runwayIdentifier } from './types.ts'
 import { getRunwayNumber } from './utilities.ts';
 import { Region } from './Layout.tsx';
+import { Header } from '@avtac/ui';
 
 let airports: string[] = [];
 
@@ -176,16 +177,19 @@ function App() {
 
   return (
     <>
-      <Region id="header">
-        <div id="inputHolder">
-          <textarea value={text} onChange={e => setText(e.target.value)} id="input"></textarea>
-          <div id="selection">
-            <AirportSelect text={text} selectedAirport={selectedAirport} setSelectedAirport={setSelectedAirport} setSelectedRunway={setSelectedRunwayId}></AirportSelect>
-            <RunwayOptions activeAirport={selectedAirport} setSelectedRunway={setSelectedRunwayId}></RunwayOptions>
+      <Header title="LCIO Visualizer" />
+      <div id='body'>
+        <Region id="overview">
+          <div id="inputHolder">
+            <textarea value={text} onChange={e => setText(e.target.value)} id="input"></textarea>
+            <div id="selection">
+              <AirportSelect text={text} selectedAirport={selectedAirport} setSelectedAirport={setSelectedAirport} setSelectedRunway={setSelectedRunwayId}></AirportSelect>
+              <RunwayOptions activeAirport={selectedAirport} setSelectedRunway={setSelectedRunwayId}></RunwayOptions>
+            </div>
           </div>
-        </div>
-      </Region>
-      <Visualizer rwy={selectedRunway} objects={objects}></Visualizer>
+        </Region>
+        <Visualizer rwy={selectedRunway} objects={objects}></Visualizer>
+      </div>
     </>
   )
 }

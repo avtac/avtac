@@ -1,3 +1,1 @@
-export function myPackageFunction() {
-  console.log("HELLO");
-}
+export { default as Header } from './Header.tsx'

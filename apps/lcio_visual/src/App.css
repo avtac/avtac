@@ -1,6 +1,14 @@
-#header {
+#body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+#overview {
   height: fit-content;
   max-height: 15rem;
+  flex-shrink: 0;
 }
 
 #inputHolder {
