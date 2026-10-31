@@ -72,6 +72,7 @@ export default defineConfig({
   })
   ],
   build: {
+    outDir: '../../dist/balance',
     emptyOutDir: true,
     rollupOptions: {
       input: {
