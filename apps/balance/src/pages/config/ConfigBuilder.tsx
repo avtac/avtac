@@ -1,5 +1,6 @@
 import './ConfigBuilder.css'
 import { MultiPane } from '@avtac/ui/Layout'
+import '@avtac/ui/global.css'
 import Limitations from './Limitations.tsx'
 import Diagram from '../../Diagram'
 import Graph from '../../Graph'
