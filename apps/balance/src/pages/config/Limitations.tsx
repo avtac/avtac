@@ -1,7 +1,6 @@
 import "./Limitations.css"
-import "../../Layout.css"
 import { useContext, useRef, type ClipboardEvent, type ReactNode } from "react";
-import { Subregion } from "../../Layout";
+import { Subregion } from "@avtac/ui/Layout";
 import { type regionT, type regionPointT, type weightLimitT, type aircraftProps, type aircraftT, type nameProps, baseLengthUnit, baseWeightUnit } from "../../Types";
 import { convertLengthUnit, convertWeightUnit, UnitContext, unitPrecision } from "../../UnitsContext";
 import { roundNumber, validateAircraft } from "../../utility";

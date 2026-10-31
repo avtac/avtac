@@ -10,7 +10,7 @@ import { convertFuelUnits, convertLengthUnit, convertWeightUnit, UnitContext, un
 import { createPortal } from 'react-dom';
 import Graph, { type graphOptionsT } from '../../Graph';
 import Diagram from '../../Diagram';
-import { Subregion } from '../../Layout';
+import { Subregion } from '@avtac/ui/Layout';
 import dayjs from 'dayjs';
 
 interface templateBrowserProps {

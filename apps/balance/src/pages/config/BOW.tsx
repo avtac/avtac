@@ -1,7 +1,6 @@
-import '../../Layout.css'
 import './BOW.css'
 import { useContext, useEffect, useRef, type ReactNode } from "react";
-import { Subregion, MultiPane } from "../../Layout";
+import { Subregion, MultiPane } from "@avtac/ui/Layout";
 import { type aircraftConfigT, type cargoAreaT, type aircraftProps, type aircraftT, type operationConfigT, type seatT, type nameProps, baseWeightUnit } from "../../Types";
 import { getSortedByArm, roundNumber, validateAircraft } from '../../utility';
 import { convertWeightUnit, UnitContext, unitPrecision } from '../../UnitsContext';

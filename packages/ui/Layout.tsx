@@ -1,11 +1,16 @@
 import { Children, isValidElement, useEffect, useState, type ReactNode } from 'react';
 import './Layout.css'
+import { tableSort } from './tableSort.ts';
 
 interface childrenProps {
   children: ReactNode
 }
 
-interface regionProps extends childrenProps {
+interface nameProps {
+  name?: string;
+}
+
+interface regionProps extends childrenProps, nameProps {
   id?: string,
   className?: string,
 }

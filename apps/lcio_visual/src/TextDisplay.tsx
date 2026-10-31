@@ -1,9 +1,8 @@
 import { type ReactNode } from "react";
 import './TextDisplay.css'
-import './Layout.css'
 import { type VisualizerData } from "./types";
 import { type Controls } from "./controls";
-import { Subregion } from "./Layout";
+import { Subregion } from "@avtac/ui/Layout";
 
 interface DisplayProps {
   data: VisualizerData[];

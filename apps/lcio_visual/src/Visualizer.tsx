@@ -7,7 +7,6 @@
 //
 import { type ReactNode, useMemo, useState } from 'react';
 import './Visualizer.css'
-import './Layout.css'
 import { type Controls, type SetControls } from './controls';
 import Inputs from './Inputs';
 import PlanView from './PlanView';
@@ -15,7 +14,7 @@ import { aboveClimbGradient, withinAngle, requiredShortening } from './utilities
 import TextDisplay from './TextDisplay';
 import ProfileView from './ProfileView';
 import { type objectData, type runwayIdentifier, type VisualizerData } from './types';
-import { Region, Subregion } from './Layout';
+import { Region, Subregion } from '@avtac/ui/Layout';
 
 interface DataFieldsProps {
   controls: Controls;

@@ -1,7 +1,6 @@
-import '../../Layout.css'
 import './Seats.css'
 import { useContext } from "react";
-import { Subregion } from "../../Layout";
+import { Subregion } from "@avtac/ui/Layout";
 import { type aircraftT, type seatT, type aircraftProps, baseLengthUnit, baseWeightUnit } from "../../Types";
 import { convertLengthUnit, convertWeightUnit, UnitContext, unitPrecision } from "../../UnitsContext";
 import { roundNumber, validateAircraft } from "../../utility";

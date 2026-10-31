@@ -1,9 +1,8 @@
 // TODO: 6. Add Overview/Printout page
 
 import './Config.css'
-import '../../Layout.css'
 import { useContext, useEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
-import { MultiPane, Subregion } from "../../Layout";
+import { MultiPane, Subregion } from "@avtac/ui/Layout";
 import { type cargoAreaT, type aircraftT, type equipmentT, type seatT, type fuelTankT, type nameProps, baseLengthUnit, baseWeightUnit, baseFuelUnit, type aircraftProps, type configT, type loadingT, type loadingProps } from "../../Types";
 import { activeConfigData, calculateBalanceForOperationConfig, calculateEmptyBalanceForConfig, getSortedByArm, roundNumber, uploadedConfigs, validateAircraft } from '../../utility';
 import { convertFuelUnits, convertLengthUnit, convertWeightUnit, UnitContext, unitPrecision } from '../../UnitsContext';

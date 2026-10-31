@@ -1,7 +1,6 @@
 import './Config.css'
-import '../../Layout.css'
 import { useContext, useEffect, useRef, useState, type ReactElement } from 'react';
-import { MultiPane, Subregion } from "../../Layout";
+import { MultiPane, Subregion } from "@avtac/ui/Layout";
 import { type aircraftConfigT, type cargoAreaT, type aircraftT, type equipmentT, type seatT, type aircraftProps, type fuelTankT, type nameProps, baseLengthUnit, baseWeightUnit, baseFuelUnit } from "../../Types";
 import { roundNumber, validateAircraft } from '../../utility';
 import { convertFuelUnits, convertLengthUnit, convertWeightUnit, UnitContext, unitPrecision } from '../../UnitsContext';

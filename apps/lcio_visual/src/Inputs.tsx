@@ -1,8 +1,7 @@
 import { type ReactNode } from 'react';
 import { type Controls, type SetControls } from './controls';
 import './Inputs.css'
-import './Layout.css'
-import { Subregion } from './Layout';
+import { Subregion } from '@avtac/ui/Layout';
 
 interface InputsProps {
   controls: Controls;

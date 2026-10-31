@@ -1,6 +1,6 @@
 import './Setup.css'
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
-import { showPopupDialog, Subregion } from "../../Layout";
+import { showPopupDialog, Subregion } from "@avtac/ui/Layout";
 import { type configProps, type configT, type nameProps, type weightUnitsT, type setupT, type lengthUnitsT, type fuelUnitsT, volumeUnits, type volumeUnitsT, baseVolumeUnit, baseWeightUnit } from "../../Types";
 import { activeConfigData, roundNumber, uploadedConfigs, validateConfig } from "../../utility";
 import { convertDensityUnits, fuelTypes, fuelUnitsElements, lengthUnitsElements, unitPrecision, weightUnitsElements } from '../../UnitsContext';

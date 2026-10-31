@@ -1,9 +1,9 @@
 import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from 'react';
 import './App.css'
 import Visualizer from './Visualizer.tsx'
-import { type objectData, type runwayIdentifier } from './types.ts'
-import { getRunwayNumber } from './utilities.ts';
-import { Region } from './Layout.tsx';
+import { type objectData, type runwayIdentifier } from './types'
+import { getRunwayNumber } from './utilities';
+import { Region } from '@avtac/ui/Layout';
 import { Header } from '@avtac/ui';
 
 let airports: string[] = [];

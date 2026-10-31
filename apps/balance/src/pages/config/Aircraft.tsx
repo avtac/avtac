@@ -1,7 +1,7 @@
 import './Aircraft.css'
 import { useRef, type ReactNode, type RefObject } from "react";
 import { type aircraftPropertiesT, type configProps, type aircraftT, type configT, type nameProps, baseLengthUnit, baseWeightUnit } from "../../Types";
-import { Subregion } from "../../Layout";
+import { Subregion } from "@avtac/ui/Layout";
 import { roundNumber, validateConfig } from '../../utility';
 import { convertLengthUnit, convertWeightUnit, unitPrecision } from '../../UnitsContext';
 
