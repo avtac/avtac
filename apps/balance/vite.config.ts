@@ -7,6 +7,7 @@ const root = resolve(__dirname, 'src');
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/balance/',
   optimizeDeps: {
     include: [
       '@fortawesome/fontawesome-svg-core',
