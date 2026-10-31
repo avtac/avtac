@@ -5,7 +5,7 @@ function Header({ title, children }: { title: string, children?: ReactNode }): R
   return (
     <header id='header'>
       <nav>{children}</nav>
-      <a href='/'>
+      <a href='https://app.av-tac.com/'>
         <h1>
           <img
             src="/favicon.svg"

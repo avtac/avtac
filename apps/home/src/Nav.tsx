@@ -9,9 +9,9 @@ function Nav() {
       <div id='body'>
         <Region id='left'>
           <Subregion id='links'>
-            <a href={'/balance'}><button>Balance</button></a>
+            <a href={'https://app.av-tac.com/balance'}><button>Balance</button></a>
             <p><b>Balance</b> is a tool for performing aircraft weight and balance calculations. The main page is for day to day use where you can load a profile and run some calculations. The config page is where you can build and adjust the configuration. This provides a way to create multiple configurations, define seat/cargo areas, and aircraft limits. For more info check out the <a href='https://github.com/avtac/avtac/tree/main/docs'>docs</a> on GitHub</p>
-            <a href={'/lcio'}><button>LCIO Vis</button></a>
+            <a href={'https://app.av-tac.com/lcio'}><button>LCIO Vis</button></a>
             <p><b>LCIO Vis</b> or Low Close-in Obstacle visualizer creates a visual representation of the low, close-in obstacles published in the trouble-Ts section of the FAA flight publications. Simply copy the text from the document that contains your desired airport and pasted it in the box in the top left. Use the dropdown to select your airport and choose the runway.</p>
           </Subregion>
           <Subregion>

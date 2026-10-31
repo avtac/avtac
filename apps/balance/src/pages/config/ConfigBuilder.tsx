@@ -198,7 +198,7 @@ function ConfigBuilder() {
   return (
     <>
       <Header title='Balance Config' >
-        <a href='../'><button>Balance</button></a>
+        <a href='https://app.av-tac.com/balance'><button>Balance</button></a>
       </Header>
       <section id="content">
         <UnitContext value={config.setup}>
