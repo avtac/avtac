@@ -5,7 +5,7 @@ import Balance from './pages/home/Balance.tsx'
 
 function App(): ReactNode {
   return (
-    <Router>
+    <Router basename='/balance'>
       <Routes>
         <Route path='/' element={<Balance />} />
         <Route path='/config' element={<ConfigBuilder />} />
