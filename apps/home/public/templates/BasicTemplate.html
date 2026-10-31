@@ -1,0 +1,78 @@
+<html>
+
+<head>
+  <title>HTML Template</title>
+  <style>
+    body {
+      margin: .25in;
+    }
+
+    table,
+    th,
+    td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+
+    #split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+
+    .bold {
+      font-weight: bold;
+    }
+
+    .signature {
+      font-family: cursive;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Weight &amp; Balance</h1>
+  <div id="split">
+    <div>
+      <p manual="Pilot">Pilot Name: </p>
+      <p function="() => global.date('M/D/YY')">Date Created: </p>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th function="() => 'Weight ' + global.units.weightUnits"></th>
+            <th function="() => 'Arm ' + global.units.lengthUnits"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="bold">
+            <td>Empty Aircraft</td>
+            <td function="() => global.emptyWeight"></td>
+            <td function="() => global.emptyArm"></td>
+          </tr>
+          <tr>
+            <td>Crew Weight</td>
+            <td function="() => global.roundNumber(global.crewWeight, 1)"></td>
+            <td function="() => global.roundNumber(global.getMac(global.crewArm), 10)"></td>
+          </tr>
+          <tr class="bold">
+            <td>Takeoff</td>
+            <td function="() => global.takeoffWeight"></td>
+            <td function="() => global.takeoffArm"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div function="() => global.graph({background: false})"></div>
+      <div function="() => global.diagram"></div>
+    </div>
+    <div>
+      <span>Within Normal Range: </span>
+      <span function="() => global.withinRegion('Normal', global.takeoffWeight, global.takeoffArm) ?'Yes':'No'">
+      </span>
+    </div>
+  </div>
+</body>
+
+</html>
