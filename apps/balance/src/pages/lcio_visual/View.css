@@ -1,0 +1,32 @@
+.point {
+  stroke: var(--text-h);
+  fill: var(--text-h);
+  cursor: pointer;
+}
+
+path {
+  pointer-events: bounding-box;
+}
+
+.selected {
+  stroke: var(--accent) !important;
+}
+
+.danger {
+  fill: #D22;
+  stroke: #D22;
+}
+
+.background {
+  fill: var(--graph-bg);
+}
+
+.gridLines {
+  stroke: var(--graph-grid-lines);
+  fill: var(--graph-grid-lines);
+}
+
+text.gridLines {
+  stroke: var(--graph-grid-lines-text);
+  fill: var(--graph-grid-lines-text);
+}

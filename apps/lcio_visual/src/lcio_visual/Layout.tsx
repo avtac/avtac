@@ -1,29 +1,26 @@
 import { Children, isValidElement, useEffect, useState, type ReactNode } from 'react';
-import { type nameProps } from './Types.ts'
 import './Layout.css'
-import { tableSort } from './tableSort.ts';
 
 interface childrenProps {
   children: ReactNode
 }
 
-function Region({ children }: childrenProps) {
+interface regionProps extends childrenProps {
+  id?: string,
+  className?: string,
+}
+
+function Region({ children, id, className }: regionProps) {
   return (
-    <div className='region'>
-      <div className='internalPadding'>
-        {children}
-      </div>
+    <div className={'region' + (className ? ' ' + className : '')} id={id}>
+      {children}
     </div>
   );
 }
 
-interface subregionProps extends childrenProps, nameProps {
-  id?: string,
-}
-
-function Subregion({ children, id }: subregionProps) {
+function Subregion({ children, id, className }: regionProps) {
   return (
-    <div className='subregion' id={id}>
+    <div className={'subregion' + (className ? ' ' + className : '')} id={id}>
       {children}
     </div>
   );

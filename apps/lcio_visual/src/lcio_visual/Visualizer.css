@@ -1,0 +1,67 @@
+#visualizer {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  height: calc(100vh - 4rem - 18px * 2);
+
+  #left {
+    flex-grow: 1;
+    max-width: 30rem;
+
+    #displayText {
+      p {
+        text-wrap: wrap;
+      }
+    }
+  }
+
+  #middle {
+    flex: 1;
+    min-width: 30rem;
+
+    #scrollRegion {
+      overflow-y: auto;
+      max-height: 100%;
+    }
+
+    #data {
+      display: flex;
+      align-items: center;
+      column-gap: 1rem;
+    }
+
+    .graphs {
+      user-select: none;
+    }
+  }
+
+  #right {
+    overflow-y: auto;
+    min-width: 21rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  #visualizer {
+    display: block;
+    overflow-y: auto;
+
+    #left {
+      max-width: unset;
+    }
+
+    #middle {
+      height: fit-content;
+      flex: unset;
+      min-width: unset;
+
+      svg {
+        max-width: 100%;
+      }
+
+      #scrollRegion {
+        overflow-y: hidden;
+      }
+    }
+  }
+}

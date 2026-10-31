@@ -9,9 +9,11 @@
   overflow-y: hidden;
 }
 
-.internalPadding {
-  margin: var(--margin-size);
-  overflow-y: visible;
+.region {
+  display: grid;
+  align-items: start;
+  align-content: start;
+  max-height: 100%;
 }
 
 .subregion {

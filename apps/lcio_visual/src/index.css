@@ -1,0 +1,335 @@
+:root {
+  --baseColor: #243f6a;
+  /* Text */
+  --text: #111;
+  --text-h: oklch(from var(--text) calc(l * 1.05) c h);
+  --text-l: oklch(from var(--text) calc(l * 1.25) c h);
+  --text-p: oklch(from var(--text) .4 c h);
+  --text-i: oklch(from var(--text) calc(1 - l) c h);
+  --text-d: var(--text);
+  --text-a: oklch(from var(--accent) l c h);
+  --text-w: #944;
+
+  /* Borders */
+  --border: oklch(from var(--accent) .6 calc(c * .2) h);
+  --dialog-border: oklch(from var(--accent) .4 0 h);
+
+  /* Backgrounds */
+  --bg: oklch(from var(--baseColor) 0.95 calc(c * 0.2) h);
+  --region-bg: oklch(from var(--baseColor) 0.85 calc(c * 0.4) h);
+  --sub-region-bg: oklch(from var(--baseColor) 0.75 calc(c * 0.5) h);
+  --header-bg: oklch(from var(--accent) 0.7 calc(c * .5) h);
+  --graph-bg: oklch(from var(--baseColor) 0.95 calc(c * 0.05) h);
+  --input-bg: oklch(from var(--accent) 0.7 calc(c * 0.7) h);
+  --button-bg: oklch(from var(--accent) 0.7 calc(c * 0.8) h);
+  --dialog-bg: oklch(from var(--baseColor) 0.9 0 h);
+  --warn-bg: #311;
+
+  /* Accents */
+  --accent: oklch(from var(--baseColor) 0.8 calc(c * 1.3) h);
+  --table-bg: #0002;
+
+  /* SVGs */
+  --graph-grid-lines-text: var(--text);
+  --graph-grid-lines: rgb(from var(--text) r g b / 0.7);
+  --diagram-aircraft-bg: oklch(from var(--sub-region-bg) calc(l * 1.3) calc(c * 0.3) h);
+  --diagram-seat-fill: oklch(from var(--sub-region-bg) 0.95 calc(c * 0.3) h);
+  --diagram-ops-fill: oklch(from var(--accent) 0.5 calc(c * 0.8) h);
+  --diagram-load-fill: oklch(from var(--accent) 0.7 calc(c * 0.95) h);
+
+  /* Shadows */
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  --margin-size: 9px;
+
+  @media (max-width: 1200px) {
+    --margin-size: 5px;
+  }
+
+  /* font: 18px/145% var(--sans); */
+  letter-spacing: 0.18px;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Text */
+    --text: #FFF;
+    --text-h: oklch(from var(--text) calc(l * .95) c h);
+    --text-l: oklch(from var(--text) calc(l * .75) c h);
+    --text-p: oklch(from var(--text) calc(l * .75) c h);
+    --text-d: var(--text);
+    --text-a: oklch(from var(--accent) calc(l * 1) c h);
+    --text-w: #F22;
+
+    /* Borders */
+    --border: oklch(from var(--accent) .3 calc(c * .3) h);
+    --dialog-border: oklch(from var(--accent) l 0 h);
+
+    /* Backgrounds */
+    --bg: oklch(from var(--baseColor) 0.15 calc(c * 10%) h);
+    --region-bg: oklch(from var(--baseColor) 0.2 calc(c * 30%) h);
+    --sub-region-bg: oklch(from var(--baseColor) 0.3 calc(c * 50%) h);
+    --header-bg: oklch(from var(--accent) 0.4 calc(c * 70%) h);
+    --graph-bg: oklch(from var(--baseColor) 0.3 calc(c * 15%) h);
+    --input-bg: oklch(from var(--accent) 0.2 calc(c * 80%) h);
+    --button-bg: oklch(from var(--accent) .4 calc(c * 90%) h);
+    --dialog-bg: oklch(from var(--baseColor) l 0 h);
+    --warn-bg: #C22;
+
+    /* Accents */
+    --accent: oklch(from var(--baseColor) .6 calc(c * 0.9) h);
+
+    /* SVGs */
+    --graph-grid-lines-text: var(--text);
+    --graph-grid-lines: rgb(from var(--text) r g b / 0.5);
+    --diagram-aircraft-bg: oklch(from var(--sub-region-bg) 45% calc(c * 0.05) h);
+    --diagram-seat-fill: lch(90% 0% 0);
+    --diagram-ops-fill: oklch(from var(--accent) 0.35 calc(c * .8) h);
+    --diagram-load-fill: oklch(from var(--accent) 0.5 calc(c * .7) h);
+
+    /* Shadows */
+    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
+      rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+  }
+
+  #social .button-icon {
+    filter: invert(1) brightness(2);
+  }
+}
+
+#root {
+  box-sizing: border-box;
+  height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  #root {
+    display: block;
+  }
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  text-align: center;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 40px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+}
+
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+}
+
+h4,
+h3 {
+  margin: .25rem;
+}
+
+p {
+  margin: 0;
+  color: var(--text);
+}
+
+textarea,
+select,
+input {
+  outline: unset;
+  color: var(--text);
+  background: var(--input-bg);
+  border-style: solid;
+  border-color: var(--border);
+  border-width: 1px;
+  border-radius: 6px;
+  padding: 5px;
+
+  @media (max-width: 580px) {
+    padding: 3px 5px;
+  }
+}
+
+input::placeholder {
+  color: var(--text-p);
+}
+
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
+button {
+  padding: 6px;
+  color: var(--text);
+  background-color: var(--button-bg);
+  border: 0px;
+  border-radius: 5px;
+  cursor: pointer;
+
+  @media (max-width: 580px) {
+    padding: 2px;
+    border-radius: 3px;
+  }
+}
+
+.hiddenButton {
+  padding: 0px;
+  background-color: unset;
+  margin: 0px;
+  font-size: 1rem;
+}
+
+button:hover:not(.hiddenButton) {
+  background-color: oklch(from var(--button-bg) calc(l * 1.25) c h);
+}
+
+button:active:not(.hiddenButton) {
+  background-color: oklch(from var(--button-bg) calc(l * 0.85) c h);
+}
+
+/* Table Styles */
+
+.sortable {
+  cursor: pointer;
+}
+
+.forward::after {
+  content: '';
+  -webkit-mask-image: url('data:image/svg+xml;utf8, <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M297.4 598.6C309.9 611.1 330.2 611.1 342.7 598.6L470.7 470.6C483.2 458.1 483.2 437.8 470.7 425.3C458.2 412.8 437.9 412.8 425.4 425.3L352 498.7L352 64C352 46.3 337.7 32 320 32C302.3 32 288 46.3 288 64L288 498.7L214.6 425.3C202.1 412.8 181.8 412.8 169.3 425.3C156.8 437.8 156.8 458.1 169.3 470.6L297.3 598.6z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8, <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M297.4 598.6C309.9 611.1 330.2 611.1 342.7 598.6L470.7 470.6C483.2 458.1 483.2 437.8 470.7 425.3C458.2 412.8 437.9 412.8 425.4 425.3L352 498.7L352 64C352 46.3 337.7 32 320 32C302.3 32 288 46.3 288 64L288 498.7L214.6 425.3C202.1 412.8 181.8 412.8 169.3 425.3C156.8 437.8 156.8 458.1 169.3 470.6L297.3 598.6z"/></svg>');
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  background: var(--text-l);
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.reverse::after {
+  content: '';
+  -webkit-mask-image: url('data:image/svg+xml;utf8, <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M342.6 41.4C330.1 28.9 309.8 28.9 297.3 41.4L169.3 169.4C156.8 181.9 156.8 202.2 169.3 214.7C181.8 227.2 202.1 227.2 214.6 214.7L288 141.3L288 576C288 593.7 302.3 608 320 608C337.7 608 352 593.7 352 576L352 141.3L425.4 214.7C437.9 227.2 458.2 227.2 470.7 214.7C483.2 202.2 483.2 181.9 470.7 169.4L342.7 41.4z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8, <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M342.6 41.4C330.1 28.9 309.8 28.9 297.3 41.4L169.3 169.4C156.8 181.9 156.8 202.2 169.3 214.7C181.8 227.2 202.1 227.2 214.6 214.7L288 141.3L288 576C288 593.7 302.3 608 320 608C337.7 608 352 593.7 352 576L352 141.3L425.4 214.7C437.9 227.2 458.2 227.2 470.7 214.7C483.2 202.2 483.2 181.9 470.7 169.4L342.7 41.4z"/></svg>');
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  background: var(--text-l);
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.sortable:not(.reverse):not(.forward)::after {
+  content: '';
+  -webkit-mask-image: url('data:image/svg+xml;utf8, <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M470.6 566.6L566.6 470.6C575.8 461.4 578.5 447.7 573.5 435.7C568.5 423.7 556.9 416 544 416L480 416L480 96C480 78.3 465.7 64 448 64C430.3 64 416 78.3 416 96L416 416L352 416C339.1 416 327.4 423.8 322.4 435.8C317.4 447.8 320.2 461.5 329.3 470.7L425.3 566.7C437.8 579.2 458.1 579.2 470.6 566.7zM214.6 73.4C202.1 60.9 181.8 60.9 169.3 73.4L73.3 169.4C64.1 178.6 61.4 192.3 66.4 204.3C71.4 216.3 83.1 224 96 224L160 224L160 544C160 561.7 174.3 576 192 576C209.7 576 224 561.7 224 544L224 224L288 224C300.9 224 312.6 216.2 317.6 204.2C322.6 192.2 319.8 178.5 310.7 169.3L214.7 73.3z"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8, <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.3.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M470.6 566.6L566.6 470.6C575.8 461.4 578.5 447.7 573.5 435.7C568.5 423.7 556.9 416 544 416L480 416L480 96C480 78.3 465.7 64 448 64C430.3 64 416 78.3 416 96L416 416L352 416C339.1 416 327.4 423.8 322.4 435.8C317.4 447.8 320.2 461.5 329.3 470.7L425.3 566.7C437.8 579.2 458.1 579.2 470.6 566.7zM214.6 73.4C202.1 60.9 181.8 60.9 169.3 73.4L73.3 169.4C64.1 178.6 61.4 192.3 66.4 204.3C71.4 216.3 83.1 224 96 224L160 224L160 544C160 561.7 174.3 576 192 576C209.7 576 224 561.7 224 544L224 224L288 224C300.9 224 312.6 216.2 317.6 204.2C322.6 192.2 319.8 178.5 310.7 169.3L214.7 73.3z"/></svg>');
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  background: var(--text-l);
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Primary layout */
+
+#content {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  overflow-x: auto;
+  max-width: 100svw;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+#leftPanel {
+  min-width: 44rem;
+
+  @media (max-width: 1200px) {
+    min-width: 0px;
+  }
+}
+
+#rightPanel {
+  display: flex;
+  flex-direction: column;
+  max-width: 70rem;
+  min-width: 25rem;
+  min-height: 60px;
+
+  @media (max-width: 1200px) {
+    position: absolute;
+    flex-direction: row;
+    right: 0px;
+    top: 0px;
+    height: 60px;
+    width: 200px;
+    min-width: 0px;
+  }
+
+  @media (max-width: 340px) {
+    width: 100px;
+
+    #diagramHolder {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 1200px) and (min-width: 500px) {
+  #rightPanel:hover {
+    max-width: unset;
+    max-height: fit-content;
+    height: fit-content;
+    width: calc(100svw - var(--margin-size) * 2);
+    top: var(--margin-size);
+    right: var(--margin-size);
+
+    transition-property: width, height, top, right;
+    transition-duration: 300ms;
+    transition-timing-function: ease-out;
+  }
+}
+
+@media (max-width: 500px) {
+  #rightPanel:hover {
+    display: grid;
+    height: fit-content;
+    width: calc(100svw - var(--margin-size) * 2);
+    top: var(--margin-size);
+    right: var(--margin-size);
+
+    transition-property: width, height, top, right;
+    transition-duration: 300ms;
+    transition-timing-function: ease-out;
+
+    #diagramHolder {
+      display: block;
+    }
+  }
+}

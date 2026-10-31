@@ -1,0 +1,56 @@
+#body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+#overview {
+  height: fit-content;
+  max-height: 15rem;
+  flex-shrink: 0;
+}
+
+#inputHolder {
+  display: grid;
+  grid-template-columns: 10rem auto;
+  gap: 1rem;
+
+  #selection {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: start;
+    gap: .5rem;
+
+    select {
+      width: 4.5rem;
+    }
+
+    #runwayButtons {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+
+      button {
+        width: 4.5rem;
+      }
+
+      button.active {
+        background-color: oklch(from var(--button-bg) calc(l * 1.55) c calc(h - 30));
+      }
+    }
+  }
+}
+
+@media (max-width: 800px) {
+  #runwayButtons {
+    button {
+      width: 2.2rem !important;
+    }
+  }
+
+  .rwyButtonExtra {
+    display: none;
+  }
+}

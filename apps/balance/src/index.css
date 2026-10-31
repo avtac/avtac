@@ -150,6 +150,7 @@ p {
   color: var(--text);
 }
 
+textarea,
 select,
 input {
   outline: unset;
