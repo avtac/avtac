@@ -161,7 +161,7 @@ function Diagram({ aircraft, loading, setLoading, diagramMode, selectedConfig, s
   const ref: RefObject<(SVGSVGElement | null)> = useRef(null);
   useEffect(() => {
     if (!ref.current) return;
-    let timerId: number;
+    let timerId: NodeJS.Timeout;
 
     const handleKey = () => {
       timerId = setTimeout(() => {

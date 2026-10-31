@@ -13,6 +13,7 @@ path {
 }
 
 .danger {
+  /* This will be changed */
   fill: var(--warn-bg);
   stroke: var(--warn-bg);
 }

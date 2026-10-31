@@ -14,5 +14,10 @@
   "dependencies": {
     "@eslint/js": "^10.0.1",
     "typescript-eslint": "^8.72.1"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint"
   }
 }

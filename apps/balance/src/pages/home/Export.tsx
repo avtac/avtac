@@ -1,5 +1,5 @@
 import './Export.css'
-import mainStyle from '../../index.css?inline'
+import mainStyle from '@avtac/ui/global.css?inline'
 import diagramStyle from '../../Diagram.css?inline'
 import graphStyle from '../../Graph.css?inline'
 import parse, { attributesToProps, domToReact, Element, type DOMNode, type HTMLReactParserOptions } from 'html-react-parser';

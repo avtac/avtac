@@ -564,7 +564,7 @@ function Graph({ aircraft, loading, selectedConfig, selectedOpsConfig, _options 
   const ref: RefObject<(SVGSVGElement | null)> = useRef(null);
   useEffect(() => {
     if (!ref.current) return;
-    let timerId: number;
+    let timerId: NodeJS.Timeout;
 
     const handleKey = () => {
       timerId = setTimeout(() => {

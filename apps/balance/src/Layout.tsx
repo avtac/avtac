@@ -7,7 +7,7 @@ interface childrenProps {
   children: ReactNode
 }
 
-interface regionProps extends childrenProps {
+interface regionProps extends childrenProps, nameProps {
   id?: string,
   className?: string,
 }
