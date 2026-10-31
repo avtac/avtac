@@ -6,11 +6,15 @@
   justify-content: space-between;
   align-items: center;
 
+  a {
+    text-decoration: none;
+  }
+
   h1 {
     font-size: 36px;
     margin: 0;
     display: flex;
-    align-items: center;
+    justify-content: center;
 
     img {
       height: 44px;

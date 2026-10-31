@@ -197,7 +197,9 @@ function ConfigBuilder() {
 
   return (
     <>
-      <Header title='Balance Config' />
+      <Header title='Balance Config' >
+        <a href='../'><button>Balance</button></a>
+      </Header>
       <section id="content">
         <UnitContext value={config.setup}>
           <div className='panel' id='leftPanel'>
