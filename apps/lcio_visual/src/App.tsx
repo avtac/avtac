@@ -28,28 +28,28 @@ function newVerbiage(airport: string) {
 
 function getAirports(text: string): string[] {
   text = cleanup(text);
-  const regex = /\n(?<SECTION>(?:[-A-Z\s\/\(\)\.’]* \([A-Z0-9]{3,4}\)\n)(?:.|\n)*?(?=(?:\n[-A-Z\s\/\(\)\.’]* \([A-Z0-9]{3,4}\)\n)|$))/g;
+  const regex = /\n(?<SECTION>(?:[-A-Z\s\/\(\)\.’]* \([A-Z0-9]{3,4}\)\n)[\s\S]*?(?=(?:\n[-A-Z\s\/\(\)\.’]* \([A-Z0-9]{3,4}\)\n)|$))/g;
   const airports = [...text.matchAll(regex)]
-  return airports.map(v => { if (v.groups) return v.groups["SECTION"]; }).filter(v => v !== undefined);
+  return airports.map(v => v.groups ? v.groups["SECTION"] : undefined).filter(v => v !== undefined);
 }
 
 // Expects a string of just one airport data from title to end
 function getObstacles(airport: string) {
-  const regex = /OBSTACLE NOTES:$\n(?<SECTION>(?:.|\n)*)/gm;
+  const regex = /OBSTACLE NOTES:(?<OBSTACLES>[\s\S]+)/gm;
   const obstacles = [...airport.matchAll(regex)]
-  if (obstacles.length === 0 || obstacles[0].length < 2) return "";
-  return obstacles[0][1];
+  if (obstacles.length === 0 || !obstacles[0].groups) return "";
+  return obstacles[0].groups["OBSTACLES"];
 }
 
 // Expects a string of just one airport data from title to end
 function getRunways(obstacles: string): string[][] {
-  const regex = /(?<RWY>Rwy \d{1,2}[LRC]?) ?,? (?<DATA>(?:.|\n)+?(?=$|Rwy))/g;
+  const regex = /(?<RWY>Rwy \d{1,2}[LRC]?) ?,? (?<DATA>[\s\S]+?(?=$|Rwy))/g;
   const runways = [...obstacles.matchAll(regex)].map(v => { if (v.groups) return [v.groups["RWY"], v.groups["DATA"]] }).filter(v => v !== undefined);
   return runways;
 }
 
 function getObjects(runwayData: string): objectData[] {
-  const regex = /^(?<type>.+?)\s+(?<distance>(?:[0-9.]+\s*(?:['‘’]|NM|)|at))\s+(?:from\s+)?DER[,.]\s+(?<offset>[^,]+),\s+(?<height>(?:.|\n)+?)\.\s*$/gm;
+  const regex = /^(?<type>.+?)\s+(?<distance>(?:[0-9.]+\s*(?:['‘’]|NM|)|at))\s+(?:from\s+)?DER[,.]\s+(?<offset>[^,]+),\s+(?<height>[\s\S]+?)\.\s*$/gm;
   const objects = [...runwayData.matchAll(regex)]
     .map(v => v.groups ? {
       type: v.groups["type"].replace('\n', ''),
@@ -98,7 +98,6 @@ function AirportSelect({ text, selectedAirport, setSelectedAirport, setSelectedR
     if (options.length !== 0) setSelectedAirport(0);
     setSelectedRunway(0);
   }, [text])
-
   return (<select id='airportSelect' onChange={(e) => { setSelectedAirport(Number(e.target.value)); setSelectedRunway(0) }} value={selectedAirport}>{options}</select>)
 }
 
@@ -172,7 +171,6 @@ function App() {
     const objects = getObjects(runway);
     setObjects(objects);
     setSelectedRunway(getRunwayNumber(runways[selectedRunwayId][0]));
-
   }, [selectedRunwayId, selectedAirport])
 
   return (
