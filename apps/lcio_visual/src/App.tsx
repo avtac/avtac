@@ -108,7 +108,7 @@ interface RunwayOptionsProps {
 
 function RunwayOptions({ activeAirport, setSelectedRunway }: RunwayOptionsProps): ReactNode {
 
-  function setActive(target: HTMLButtonElement) {
+  function setActive(target: Element) {
     document.querySelector("button.active")?.classList.remove("active");
     target.classList.add("active");
   }
@@ -122,7 +122,7 @@ function RunwayOptions({ activeAirport, setSelectedRunway }: RunwayOptionsProps)
   const runways = getRunways(getObstacles(selectedAirport));
   for (let i = 0; i < runways.length; i++) {
     const first = i === 0 ? "active" : "";
-    const set = (e) => { setActive(e.target); ((v) => setSelectedRunway(v))(i); };
+    const set = (e: React.MouseEvent<HTMLButtonElement>) => { setActive(e.target as Element); ((v) => setSelectedRunway(v))(i); };
     const runwaySplit = runways[i][0].split(" ");
     runwayOptions.push(<button
       key={runways[i][0]}

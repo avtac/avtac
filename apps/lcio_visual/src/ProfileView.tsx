@@ -166,15 +166,15 @@ function ProfileView({ data, controls, setData, setControls }: DisplayProps): Re
     );
   });
 
-  function onDrag(e: React.MouseEvent<SVGElement>) {
+  function onDrag(e: React.MouseEvent<SVGElement>, controls: Controls) {
     if (e.buttons === 1) {
       const movement = e.movementX;
-      const newOffset = controls.runwayOffset + Math.round(movement * controls.width / e.currentTarget.clientWidth);
+      const newOffset = controls.runwayOffset + movement * controls.width / e.currentTarget.clientWidth;
       move(newOffset, 0);
     }
   }
 
-  function onWheel(e: React.WheelEvent<SVGElement>) {
+  function onWheel(e: React.WheelEvent<SVGElement>, controls: Controls) {
     const widthChange = (e.deltaY * controls.width / 1000);
     const newWidth = controls.width + widthChange;
 
@@ -182,24 +182,25 @@ function ProfileView({ data, controls, setData, setControls }: DisplayProps): Re
     const newPos = pos * newWidth / controls.width;
     const dPos = newPos - pos;
 
-    const newOffset = controls.runwayOffset + Math.round(dPos);
+    const newOffset = controls.runwayOffset + dPos;
     setControls.width(Math.min(Math.max(newWidth, 500), 20000));
     move(newOffset, 0);
   }
 
-  function onTouchStart(e: React.TouchEvent<SVGElement>) {
-    console.log(e.touches.length);
+  function onTouchStart(e: React.TouchEvent<SVGElement>, controls: Controls) {
     if (!dragging && e.touches.length === 1) {
       dragging = true;
+
       const scale = controls.width / e.currentTarget.clientWidth
       dragStart = (e.touches[0].clientX - e.currentTarget.getBoundingClientRect().left) * scale - controls.runwayOffset;
+
     } else if (!pinching && e.touches.length === 2) {
       pinching = true;
       dragging = false;
-      const dragStart1 = (e.touches[0].clientX - e.currentTarget.getBoundingClientRect().left);
-      const dragStart2 = (e.touches[1].clientX - e.currentTarget.getBoundingClientRect().left);
+
       const scale = controls.width / e.currentTarget.clientWidth
-      dragStartDistance = Math.abs(dragStart2 - dragStart1) * scale;
+      dragStart = ((e.touches[0].clientX + (e.touches[1].clientX - e.touches[0].clientX) / 2) - e.currentTarget.getBoundingClientRect().left) * scale - controls.runwayOffset;
+      dragStartDistance = Math.abs(e.touches[1].clientX - e.touches[0].clientX);
       dragStartWidth = controls.width;
     }
   }
@@ -210,34 +211,33 @@ function ProfileView({ data, controls, setData, setControls }: DisplayProps): Re
       pinching = false;
     } else if (e.touches.length === 1) {
       pinching = false;
+      dragging = true;
+      const scale = controls.width / e.currentTarget.clientWidth
+      dragStart = (e.touches[0].clientX - e.currentTarget.getBoundingClientRect().left) * scale - controls.runwayOffset;
     }
   }
 
-  function onTouchDrag(e: TouchEvent) {
+  function onTouchDrag(e: TouchEvent, controls: Controls) {
     if (e.currentTarget === null) return;
     const target = e.currentTarget as Element;
     e.preventDefault();
-    if (dragging && e.touches.length === 1) {
+    if (dragging) {
       const position = e.touches[0].clientX - target.getBoundingClientRect().left;
       const scale = controls.width / target.clientWidth;
 
-      const newOffset = Math.round(position * scale - dragStart);
+      const newOffset = position * scale - dragStart;
       move(newOffset, 0);
-    } else if (pinching && e.touches.length === 2) {
+    } else if (pinching) {
       const scale = controls.width / target.clientWidth;
 
-      const dragStart1 = (e.touches[0].clientX - target.getBoundingClientRect().left);
-      const dragStart2 = (e.touches[1].clientX - target.getBoundingClientRect().left);
-      const distance = Math.abs(dragStart2 - dragStart1) * scale;
+      const distance = Math.abs(e.touches[1].clientX - e.touches[0].clientX);
 
-      let newWidth = dragStartWidth - (distance - dragStartDistance) * 1;
+      let newWidth = dragStartDistance / distance * dragStartWidth;
       newWidth = Math.min(Math.max(newWidth, 500), 20000)
 
-      const pos = dragStart1 * scale - controls.runwayOffset;
-      const newPos = pos * newWidth / controls.width;
-      const dPos = newPos - pos;
+      const position = (e.touches[0].clientX + (e.touches[1].clientX - e.touches[0].clientX) / 2) - target.getBoundingClientRect().left;
 
-      const newOffset = controls.runwayOffset + Math.round(dPos);
+      const newOffset = position * scale - dragStart;
       setControls.width(newWidth);
       move(newOffset, 0);
     }
@@ -249,16 +249,16 @@ function ProfileView({ data, controls, setData, setControls }: DisplayProps): Re
 
   useEffect(() => {
     const e = diagram?.current;
-    e?.addEventListener("touchmove", onTouchDrag, { passive: false });
-  }, [])
+    e?.addEventListener("touchmove", (e) => onTouchDrag(e, controls), { passive: false });
+  }, [controls.width])
 
   return (
     <svg
       id='profileView'
       ref={diagram}
-      onMouseMove={onDrag}
-      onWheel={onWheel}
-      onTouchStart={onTouchStart}
+      onMouseMove={e => onDrag(e, controls)}
+      onWheel={e => onWheel(e, controls)}
+      onTouchStart={e => onTouchStart(e, controls)}
       onTouchEnd={onTouchEnd}
       viewBox={`${-controls.runwayOffset} ${0} ${controls.width} ${controls.height}`}
       transform="scale(1, -1)"
