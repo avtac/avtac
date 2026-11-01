@@ -153,7 +153,7 @@ function Balance() {
   return (
     <>
       <Header title="Balance" >
-        <a href='./config'><button>Config Builder</button></a>
+        <a href='/balance/config'><button>Config Builder</button></a>
       </Header>
       <Warning text={"Config has changed and does not match original"} display={changed} />
       <section id="content">

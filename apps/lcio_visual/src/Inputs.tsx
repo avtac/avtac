@@ -37,36 +37,36 @@ function Inputs({ controls, setControls }: InputsProps): ReactNode {
         {/*     <label htmlFor='view'>{!controls.view ? "Plan" : "Profile"}</label> */}
         {/*   </div> */}
         {/* </div> */}
-        <div className='group'>
-          <p>View Width (ft)</p>
-          <div style={{ display: "flex" }}>
-            <input
-              name='widthSlider'
-              id='widthSlider'
-              type={"range"}
-              value={controls.width}
-              min={500}
-              max={3 * 6070}
-              step={100}
-              onChange={(e) => setControls.width(Number(e.target.value))}></input>
-            <label htmlFor='widthSlider'>{controls.width}ft</label>
-          </div>
-        </div>
-        <div className='group'>
-          <p>View Runway Offset (ft)</p>
-          <div style={{ display: "flex" }}>
-            <input
-              name='runwayOffset'
-              id='runwayOffset'
-              type={"range"}
-              value={controls.runwayOffset}
-              min={-6000}
-              max={6000}
-              step={100}
-              onChange={(e) => setControls.runwayOffset(Number(e.target.value))}></input>
-            <label htmlFor='runwayOffset'>{controls.runwayOffset}ft</label>
-          </div>
-        </div>
+        {/* <div className='group'> */}
+        {/*   <p>View Width (ft)</p> */}
+        {/*   <div style={{ display: "flex" }}> */}
+        {/*     <input */}
+        {/*       name='widthSlider' */}
+        {/*       id='widthSlider' */}
+        {/*       type={"range"} */}
+        {/*       value={controls.width} */}
+        {/*       min={500} */}
+        {/*       max={3 * 6070} */}
+        {/*       step={100} */}
+        {/*       onChange={(e) => setControls.width(Number(e.target.value))}></input> */}
+        {/*     <label htmlFor='widthSlider'>{controls.width}ft</label> */}
+        {/*   </div> */}
+        {/* </div> */}
+        {/* <div className='group'> */}
+        {/*   <p>View Runway Offset (ft)</p> */}
+        {/*   <div style={{ display: "flex" }}> */}
+        {/*     <input */}
+        {/*       name='runwayOffset' */}
+        {/*       id='runwayOffset' */}
+        {/*       type={"range"} */}
+        {/*       value={controls.runwayOffset} */}
+        {/*       min={-6000} */}
+        {/*       max={6000} */}
+        {/*       step={100} */}
+        {/*       onChange={(e) => setControls.runwayOffset(Number(e.target.value))}></input> */}
+        {/*     <label htmlFor='runwayOffset'>{controls.runwayOffset}ft</label> */}
+        {/*   </div> */}
+        {/* </div> */}
         <div className='group'>
           <p>Elevation (ft)</p>
           <div style={{ display: "flex" }}>

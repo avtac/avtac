@@ -1,10 +1,7 @@
 // TODO:
-// [x] ICONS: Trees, Pole, General, Building, Fence, Road, Train, Vegetation, Lighting, Terrain
-// [x] Fix overflow vertical with lots of objects
 // [ ] More data fields
-// [x] Move select button
 // [ ] Make better airport search bar
-//
+
 import { type ReactNode, useMemo, useState } from 'react';
 import './Visualizer.css'
 import { type Controls, type SetControls } from './controls';
@@ -160,21 +157,36 @@ function Visualizer({ rwy, objects }: VisualizerProps): ReactNode {
   return (
     <div id="visualizer">
       <Region id="left">
-        <TextDisplay data={data} setData={setData} controls={controls} />
+        <TextDisplay
+          data={data}
+          setData={setData}
+          controls={controls} />
       </Region>
       <Region id="middle">
-        <DataFields data={data} controls={controls} />
+        <DataFields
+          data={data}
+          controls={controls} />
         <div id="scrollRegion">
           <Subregion className="graphs">
-            {controls.view ? <ProfileView controls={controls} data={data} setData={setData} /> : <PlanView controls={controls} data={data} setData={setData} />}
+            <PlanView
+              controls={controls}
+              setControls={setControls}
+              data={data}
+              setData={setData} />
           </Subregion>
           <Subregion className="graphs">
-            {!controls.view ? <ProfileView controls={controls} data={data} setData={setData} /> : <PlanView controls={controls} data={data} setData={setData} />}
+            <ProfileView
+              controls={controls}
+              setControls={setControls}
+              data={data}
+              setData={setData} />
           </Subregion>
         </div>
       </Region>
       <Region id='right'>
-        <Inputs controls={controls} setControls={setControls} />
+        <Inputs
+          controls={controls}
+          setControls={setControls} />
       </Region>
     </div>
   );
