@@ -50,7 +50,6 @@
 
 #iframeHolder {
   overflow-y: auto;
-  min-height: 25rem;
 }
 
 #exportButton {

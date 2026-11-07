@@ -5,11 +5,13 @@ import { calculateBalanceForLanding, calculateBalanceForOperationConfig, calcula
 import { convertLengthUnit, convertWeightUnit, UnitContext } from './UnitsContext';
 
 let width = 140;
-let height = 90;
+let defaultAspectRatio = 140 / 90;
 let padding = 12;
 let graphInsetPadding = 5;
 
 interface limitsT {
+  width: number,
+  height: number,
   minX: number,
   maxX: number,
   minY: number,
@@ -27,10 +29,10 @@ function reverseCalculateX(limits: limitsT, x: number): number {
 }
 
 function calculatePointY(limits: limitsT, weight: number): number {
-  return height - (weight - limits.minY) * limits.yRatio - padding - graphInsetPadding;
+  return limits.height - (weight - limits.minY) * limits.yRatio - padding - graphInsetPadding;
 }
 function reverseCalculateY(limits: limitsT, y: number): number {
-  return -(y + padding + graphInsetPadding - height) / limits.yRatio + limits.minY;
+  return -(y + padding + graphInsetPadding - limits.height) / limits.yRatio + limits.minY;
 }
 
 function calculateArm(weight1: number, arm1: number, weight2: number, arm2: number): number {
@@ -335,14 +337,14 @@ function PlotHorizontalGrid({ limits, gridSpacing, units }: plotGridProps): Reac
         <Fragment key={i}>
           <polyline
             className={"gridLines"}
-            points={`${x.pos},${padding} ${x.pos},${height - padding}`}
+            points={`${x.pos},${padding} ${x.pos},${limits.height - padding}`}
             strokeWidth='.2'
             strokeDasharray={".5"} />
           <text
             className={"gridLines"}
             x={x.pos}
-            y={height - padding / 2}
-            transform={`rotate(${longestString >= gapBetweenGrid / 2.5 ? 45 : 0}, ${x.pos}, ${height - padding / 2})`}
+            y={limits.height - padding / 2}
+            transform={`rotate(${longestString >= gapBetweenGrid / 2.5 ? 45 : 0}, ${x.pos}, ${limits.height - padding / 2})`}
             textAnchor='middle'
             alignmentBaseline='after-edge'>
             {x.value}
@@ -497,6 +499,7 @@ export interface graphOptionsT {
   takeoffPoint?: boolean;
   maxConfigPoint?: boolean;
   configRegion?: boolean;
+  aspectRatio?: number;
 }
 
 interface graphProps {
@@ -530,14 +533,16 @@ function Graph({ aircraft, loading, selectedConfig, selectedOpsConfig, _options 
     landingPoint: true,
     takeoffPoint: true,
     maxConfigPoint: false,
-    configRegion: false
+    configRegion: false,
+    aspectRatio: defaultAspectRatio
   }
 
+
   if (_options !== undefined)
-    Object.entries(options).forEach(([key, _]) => {
+    Object.entries(options).forEach(([key, v]) => {
       if (Object.hasOwn(_options, key)) {
         const typedKey = key as keyof graphOptionsT;
-        options[typedKey] = _options[typedKey];
+        options[typedKey] = _options[typedKey] as typeof v;
       }
     });
 
@@ -545,6 +550,8 @@ function Graph({ aircraft, loading, selectedConfig, selectedOpsConfig, _options 
   const configAreaPoints = useRef("");
 
   let limits: limitsT = {
+    width: width,
+    height: width / (options.aspectRatio ?? defaultAspectRatio),
     minX: 0,
     maxX: 1,
     minY: 0,
@@ -740,12 +747,14 @@ function Graph({ aircraft, loading, selectedConfig, selectedOpsConfig, _options 
   }
 
   limits = {
+    width: width,
+    height: width / (options.aspectRatio ?? defaultAspectRatio),
     minX: minX,
     maxX: maxX,
     minY: minY,
     maxY: maxY,
     xRatio: (width - graphInsetPadding * 2 - padding * 2) / (maxX - minX),
-    yRatio: (height - graphInsetPadding * 2 - padding * 2) / (maxY - minY)
+    yRatio: (limits.height - graphInsetPadding * 2 - padding * 2) / (maxY - minY)
   };
 
   // Convert interval to spacing of 1, 2, or 5 * 10^x
@@ -760,7 +769,7 @@ function Graph({ aircraft, loading, selectedConfig, selectedOpsConfig, _options 
   // Unit spacing for grid lines
   const desiredTicks = 10;
   const horSpacing = getCleanInterval(maxX - minX, desiredTicks);
-  const verSpacing = getCleanInterval(maxY - minY, desiredTicks * height / width);
+  const verSpacing = getCleanInterval(maxY - minY, desiredTicks * limits.height / width);
 
   // Gird base components
   const title = <PlotTitle title={`Weight (${units.weightUnits}) vs Arm (${units.useMAC ? "% MAC" : units.lengthUnits})`} />;
@@ -805,8 +814,8 @@ function Graph({ aircraft, loading, selectedConfig, selectedOpsConfig, _options 
     const graph = document.getElementById("graph");
     if (!graph) return;
     const box = graph.getBoundingClientRect();
-    const mousePos = { x: (e.pageX - box.x) * width / box.width, y: (e.pageY - box.y) * height / box.height }
-    setMouseIn(mousePos.x > padding && mousePos.x < width - padding && mousePos.y > padding && mousePos.y < height - padding);
+    const mousePos = { x: (e.pageX - box.x) * width / box.width, y: (e.pageY - box.y) * limits.height / box.height }
+    setMouseIn(mousePos.x > padding && mousePos.x < width - padding && mousePos.y > padding && mousePos.y < limits.height - padding);
     setMousePos(mousePos);
   }
 
@@ -848,8 +857,8 @@ function Graph({ aircraft, loading, selectedConfig, selectedOpsConfig, _options 
       onMouseMove={e => setMouse(e)}
       id='graph'
       preserveAspectRatio='none'
-      viewBox={`0 ${options.title ? 0 : 6} ${width - (options.limitsLabels ? 0 : 6)} ${height - (options.title ? 0 : 9)}`}>
-      {options.background && <PlotArea width={width} height={height} />}
+      viewBox={`0 ${options.title ? 0 : 6} ${width - (options.limitsLabels ? 0 : 6)} ${limits.height - (options.title ? 0 : 9)}`}>
+      {options.background && <PlotArea width={width} height={limits.height} />}
       {options.title && title}
       {dataAvailable && horizontalBars}
       {dataAvailable && verticalBars}
