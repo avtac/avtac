@@ -245,16 +245,15 @@ function generateScopeData(aircraft: aircraftT, loading: loadingT, selectedOpsCo
     const seat = aircraft.seats.find(s => s.name === seatName)
     if (!seat) return -1;
     const pax = loading.passengers.find(p => p.location === seat.id)
-    if (!pax) return 0;
-    return pax.count
+    return (pax ? pax.count : 0);
   }
 
   const getSeatWeight = (seatName: string) => {
     const seat = aircraft.seats.find(s => s.name === seatName)
     if (!seat) return -1;
     const pax = loading.passengers.find(p => p.location === seat.id)
-    if (!pax) return 0;
-    return pax.avgWeight * pax.count;
+    const crew = aircraft.operationConfigs[opsConfigIndex].seats.find(p => p.id === seat.id);
+    return (pax ? pax.avgWeight * pax.count : 0) + (crew ? crew.weight : 0);
   }
 
   const getSeatArm = (seatName: string) => {
@@ -267,8 +266,8 @@ function generateScopeData(aircraft: aircraftT, loading: loadingT, selectedOpsCo
     const cargoArea = aircraft.cargoAreas.find(c => c.name === cargoAreaName)
     if (!cargoArea) return -1;
     const cargo = loading.cargo.find(c => c.location === cargoArea.id)
-    if (!cargo) return 0;
-    return cargo.weight;
+    const opsCargo = aircraft.operationConfigs[opsConfigIndex].cargoAreas.find(p => p.id === cargoArea.id);
+    return (cargo ? cargo.weight : 0) + (opsCargo ? opsCargo.weight : 0);
   }
 
   const getCargoArm = (cargoAreaName: string) => {
@@ -469,6 +468,12 @@ const whitelistTags = [
   "var"
 ]
 
+const voidTags = [
+  "br",
+  "col",
+  "hr",
+]
+
 // Add general style to all templates
 const headBase = `
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
@@ -630,11 +635,15 @@ export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & n
           }
 
           const props = attributesToProps((domNode.attribs));
-          return (
-            <>
-              <domNode.name {...props}>{children}{manContent}{funcContent}</domNode.name>
-            </>
-          );
+          if (voidTags.includes(domNode.name)) {
+            return <domNode.name {...props} />
+          } else {
+            return (
+              <>
+                <domNode.name {...props}>{children}{manContent}{funcContent}</domNode.name>
+              </>
+            );
+          }
         }
       }
 
