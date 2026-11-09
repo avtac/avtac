@@ -340,6 +340,7 @@ function generateScopeData(aircraft: aircraftT, loading: loadingT, selectedOpsCo
   const crewCargoArm = crewCargoWeight === 0 ? 0 : roundNumber(convertLengthUnit(aircraft.operationConfigs[opsConfigIndex].cargoAreas.reduce((sum, c) => { const C = aircraft.cargoAreas.find(v => v.id === c.id); if (!C) return sum; return sum + (c.weight * C.arm) }, 0) / crewCargoWeight, baseLengthUnit, baseLengthUnit), unitPrecision);
 
   const numPassengers = loading.passengers.reduce((sum, p) => sum + p.count, 0);
+
   const passengerWeight = roundNumber(convertWeightUnit(loading.passengers.reduce((sum, s) => sum + s.avgWeight * s.count, 0), baseWeightUnit, units.weightUnits), unitPrecision);
   const passengerArm = passengerWeight === 0 ? 0 : roundNumber(convertLengthUnit(loading.passengers.reduce((sum, s) => { const S = aircraft.seats.find(v => v.id === s.location); if (!S) return sum; return sum + (s.avgWeight * s.count * S.arm) }, 0) / passengerWeight, baseLengthUnit, units.lengthUnits), unitPrecision);
 
@@ -371,8 +372,7 @@ function generateScopeData(aircraft: aircraftT, loading: loadingT, selectedOpsCo
     const seat = aircraft.seats.find(s => s.name === seatName)
     if (!seat) return -1;
     const pax = loading.passengers.find(p => p.location === seat.id)
-    const crew = aircraft.operationConfigs[opsConfigIndex].seats.find(p => p.id === seat.id);
-    return (pax ? pax.avgWeight * pax.count : 0) + (crew ? crew.weight : 0);
+    return (pax ? pax.avgWeight * pax.count : 0);
   }
 
   const getSeatArm = (seatName: string) => {
@@ -490,8 +490,20 @@ function generateTemplate(globalData: globalsT, template: templateT): string {
     }
     return values[opr] ?? 0;
   });
+  Handlebars.registerHelper("let", function(name: string, value: any, options: any) {
+    options.data.root[name] = value;
+    return options.fn(options.data.root);
+  });
+  Handlebars.registerHelper("object", function({ hash }) {
+    return hash;
+  });
   Handlebars.registerHelper("min", (a: number, b: number) => a < b ? a : b);
   Handlebars.registerHelper("max", (a: number, b: number) => a > b ? a : b);
+  Handlebars.registerHelper("equal", (a: number, b: number) => a === b);
+  Handlebars.registerHelper("lessThan", (a: number, b: number) => a < b);
+  Handlebars.registerHelper("greaterThan", (a: number, b: number) => a > b);
+  Handlebars.registerHelper("lessThanEqual", (a: number, b: number) => a <= b);
+  Handlebars.registerHelper("greaterThanEqual", (a: number, b: number) => a >= b);
   Handlebars.registerHelper("graph", (options: graphOptionsT) => renderToString(globalData.graph(options)));
   Handlebars.registerHelper("date", (format: string) => dayjs().format(format));
   Handlebars.registerHelper("round", (n: number, precision: number) => roundNumber(n, precision));
