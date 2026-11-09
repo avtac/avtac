@@ -1,7 +1,17 @@
 <html>
 
+<!--
+{
+  "name": "Basic Template",
+  "inputs": [
+    {"name": "pilot-name", "label": "Pilot Name", "type": "text"}
+  ]
+}
+-->
+
 <head>
   <title>HTML Template</title>
+  {{{defaultStyles}}}
   <style>
     body {
       margin: .25in;
@@ -34,43 +44,46 @@
   <h1>Weight &amp; Balance</h1>
   <div id="split">
     <div>
-      <p manual="Pilot">Pilot Name: </p>
-      <p function="() => global.date('M/D/YY')">Date Created: </p>
+      <p>Pilot Name: {{user.pilot-name}}</p>
+      <p>Date Created: {{date "M/D/YY"}}</p>
       <table>
         <thead>
           <tr>
             <th></th>
-            <th function="() => 'Weight ' + global.units.weightUnits"></th>
-            <th function="() => 'Arm ' + global.units.lengthUnits"></th>
+            <th>Weight {{units.weightUnits}}</th>
+            <th>Arm {{units.lengthUnits}}</th>
           </tr>
         </thead>
         <tbody>
           <tr class="bold">
             <td>Empty Aircraft</td>
-            <td function="() => global.emptyWeight"></td>
-            <td function="() => global.emptyArm"></td>
+            <td>{{emptyWeight}}</td>
+            <td>{{emptyArm}}</td>
           </tr>
           <tr>
             <td>Crew Weight</td>
-            <td function="() => global.roundNumber(global.crewWeight, 1)"></td>
-            <td function="() => global.roundNumber(global.getMac(global.crewArm), 10)"></td>
+            <td>{{round crewWeight 1}}</td>
+            <td>{{ round (getMac crewArm) 10}}</td>
           </tr>
           <tr class="bold">
             <td>Takeoff</td>
-            <td function="() => global.takeoffWeight"></td>
-            <td function="() => global.takeoffArm"></td>
+            <td>{{takeoffWeight}}</td>
+            <td>{{takeoffArm}}</td>
           </tr>
         </tbody>
       </table>
     </div>
     <div>
-      <div function="() => global.graph({background: false})"></div>
-      <div function="() => global.diagram"></div>
+      <div>{{{graph (object background=false)}}}</div>
+      <div>{{{diagram}}}</div>
     </div>
     <div>
       <span>Within Normal Range: </span>
-      <span function="() => global.withinRegion('Normal', global.takeoffWeight, global.takeoffArm) ?'Yes':'No'">
-      </span>
+      {{#if (withinRegion 'Normal' takeoffWeight takeoffArm)}}
+        <span>Yes</span>
+      {{else}}
+        <span>No</span>
+      {{/if}}
     </div>
   </div>
 </body>
