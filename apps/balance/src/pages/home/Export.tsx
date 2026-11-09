@@ -478,32 +478,32 @@ function generateScopeData(aircraft: aircraftT, loading: loadingT, selectedOpsCo
   return globalData;
 }
 
+Handlebars.registerHelper("math", (a: number, opr: string, b: number): number => {
+  var values: Record<string, number> = {
+    "+": a + b,
+    "-": a - b,
+    "*": a * b,
+    "/": b !== 0 ? a / b : 0
+  }
+  return values[opr] ?? 0;
+});
+Handlebars.registerHelper("let", function(name: string, value: any, options: any) {
+  options.data.root[name] = value;
+  return options.fn(options.data.root);
+});
+Handlebars.registerHelper("object", function({ hash }) {
+  return hash;
+});
+Handlebars.registerHelper("min", (a: number, b: number) => a < b ? a : b);
+Handlebars.registerHelper("max", (a: number, b: number) => a > b ? a : b);
+Handlebars.registerHelper("equal", (a: number, b: number) => a === b);
+Handlebars.registerHelper("lessThan", (a: number, b: number) => a < b);
+Handlebars.registerHelper("greaterThan", (a: number, b: number) => a > b);
+Handlebars.registerHelper("lessThanEqual", (a: number, b: number) => a <= b);
+Handlebars.registerHelper("greaterThanEqual", (a: number, b: number) => a >= b);
 function generateTemplate(globalData: globalsT, template: templateT): string {
   const T = Handlebars.compile(template.body);
 
-  Handlebars.registerHelper("math", (a: number, opr: string, b: number): number => {
-    var values: Record<string, number> = {
-      "+": a + b,
-      "-": a - b,
-      "*": a * b,
-      "/": b !== 0 ? a / b : 0
-    }
-    return values[opr] ?? 0;
-  });
-  Handlebars.registerHelper("let", function(name: string, value: any, options: any) {
-    options.data.root[name] = value;
-    return options.fn(options.data.root);
-  });
-  Handlebars.registerHelper("object", function({ hash }) {
-    return hash;
-  });
-  Handlebars.registerHelper("min", (a: number, b: number) => a < b ? a : b);
-  Handlebars.registerHelper("max", (a: number, b: number) => a > b ? a : b);
-  Handlebars.registerHelper("equal", (a: number, b: number) => a === b);
-  Handlebars.registerHelper("lessThan", (a: number, b: number) => a < b);
-  Handlebars.registerHelper("greaterThan", (a: number, b: number) => a > b);
-  Handlebars.registerHelper("lessThanEqual", (a: number, b: number) => a <= b);
-  Handlebars.registerHelper("greaterThanEqual", (a: number, b: number) => a >= b);
   Handlebars.registerHelper("graph", (options: graphOptionsT) => renderToString(globalData.graph(options)));
   Handlebars.registerHelper("date", (format: string) => dayjs().format(format));
   Handlebars.registerHelper("round", (n: number, precision: number) => roundNumber(n, precision));
@@ -637,7 +637,6 @@ export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & n
     const tmp = JSON.parse(JSON.stringify(userValues));
     tmp[name] = value;
     setUserValues(tmp);
-    console.log(tmp, name, value);
   }
 
   useMemo(() => {
