@@ -210,6 +210,7 @@ function PlotLimit({ data, limits, options }: plotLimitProps): ReactNode {
         let points = `${x1},${y} ${x2},${y}`;
         return (
           <polyline
+            key={v.id + "-line"}
             points={points}
             stroke={v.color.split(";")[0]}
             strokeDasharray={v.lineStyle}
@@ -221,8 +222,9 @@ function PlotLimit({ data, limits, options }: plotLimitProps): ReactNode {
           topY += data[i - 1].name.split(";").length * charSize + charSize + gapSize + spacing;
         // FIX assumption that previous names are 1 length
         return (
-          <>
+          <g key={v.id + "-text"}>
             <text
+              key={v.id + "-names"}
               x={x2 + 1}
               y={topY}
               alignmentBaseline={v.name != "" ? 'after-edge' : 'middle'}
@@ -231,7 +233,7 @@ function PlotLimit({ data, limits, options }: plotLimitProps): ReactNode {
             </text>
             {v.name.split(';').map((name: string, j: number) => {
               return <text
-                key={"weight" + i + "TEXT" + j}
+                key={v.id + "-weight"}
                 x={x2 + 1}
                 y={topY + (j + 1) * charSize + gapSize}
                 alignmentBaseline='after-edge'
@@ -239,7 +241,7 @@ function PlotLimit({ data, limits, options }: plotLimitProps): ReactNode {
                 {name}
               </text>
             })}
-          </>
+          </g>
         )
       })}
     </>
