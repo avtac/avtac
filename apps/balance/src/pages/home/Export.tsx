@@ -3,7 +3,7 @@ import mainStyle from '@avtac/ui/global.css?inline'
 import diagramStyle from '../../Diagram.css?inline'
 import graphStyle from '../../Graph.css?inline'
 import Handlebars from "handlebars"
-import { useMemo, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useMemo, useContext, useEffect, useRef, useState, type ReactNode, type RefObject, useTransition } from "react";
 import { renderToString } from 'react-dom/server';
 import { baseFuelUnit, baseLengthUnit, baseWeightUnit, DiagramModes, type aircraftT, type fuelUnitsT, type lengthUnitsT, type loadingT, type nameProps, type setupT, type weightUnitsT } from "../../Types";
 import { calculateBalanceForLanding, calculateBalanceForOperationConfig, calculateBalanceForTakeoff, calculateBalanceForZeroFuel, calculateEmptyBalanceForConfig, calculateMAC, roundNumber, validateAircraft, withinRegion } from '../../utility';
@@ -13,14 +13,41 @@ import Diagram from '../../Diagram';
 import { Subregion } from '@avtac/ui/Layout';
 import dayjs from 'dayjs';
 
-interface templateDescription {
+interface templateInputProperties {
+  name: string;
+  label: string;
+  type: "text" | "number" | "date" | "select";
+  default?: string | number;
+  options?: string[]; // for "select"
+}
+
+interface templateProperties {
   fileName: string;
-  name?: string;
-  description?: string;
-  primaryUse?: string;
-  expectedLimits?: string[]; // List of names of limits that are used
-  expectedRegions?: string[]; // List of names of regions that are used
-  usesMAC?: boolean;
+  name: string;
+  description: string;
+  size: ("Letter" | "A4" | "Legal");
+  inputs: templateInputProperties[];
+  uses: string;
+  limits: string[]; // List of names of limits that are used
+  regions: string[]; // List of names of regions that are used
+}
+
+const defaultProperties: templateProperties = {
+  fileName: "",
+  name: "",
+  description: "",
+  size: "Letter",
+  uses: "",
+  inputs: [],
+  limits: [],
+  regions: []
+}
+
+function createProperties(options?: Partial<templateProperties>): templateProperties {
+  return {
+    ...defaultProperties,
+    ...options,
+  };
 }
 
 // Available Templates: This is where the template data is stored so clients
@@ -28,30 +55,10 @@ interface templateDescription {
 // Add to this list with the appropriate information along with the template
 // in the public/templates folder to make more templates available
 
-const availableTemplates: templateDescription[] = [
-  {
-    fileName: "BasicTemplate.html",
-    name: "Basic HTML Template",
-    description: "Basic export template written using the html format.",
-    primaryUse: "Simple export"
-  }
-]
-
 interface templateT {
-  name?: string;
-  size?: ("Letter" | "A4" | "Legal");
-  style?: string;
   id?: string;
-  inputs?: InputsT[];
+  properties: templateProperties;
   body: string;
-}
-
-interface InputsT {
-  name: string;
-  label: string;
-  type: "text" | "number" | "date" | "select";
-  default?: string | number;
-  options?: string[]; // for "select"
 }
 
 interface globalsT {
@@ -133,6 +140,24 @@ const headBase = `
   </style>
 `
 
+interface fileDatabaseListT {
+  data: fileDatabaseDataT[];
+  maxOffset: number;
+  pageSize: number;
+}
+
+function defaultFileDatabaseList(): fileDatabaseListT {
+  return { data: [], maxOffset: 0, pageSize: 0 }
+}
+
+interface fileDatabaseDataT {
+  name: string;
+  id: number;
+  downloads: number;
+  likes: number;
+  dateCreated: number;
+}
+
 interface templateBrowserProps {
   setTemplate: (argv: string) => void;
 }
@@ -140,17 +165,13 @@ interface templateBrowserProps {
 function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   const ref: RefObject<null | HTMLDialogElement> = useRef(null);
   const [selectedTemplate, setSelectedTemplate] = useState(0);
+  const [isPending, startTransition] = useTransition()
+  const [databaseData, setDatabaseData] = useState(defaultFileDatabaseList());
+  const [offset, setOffset] = useState(0);
 
-  async function addFile() {
-    const select = document.getElementById("templateSearchSelect") as HTMLSelectElement;
-    if (!select) return;
-    const fileName = availableTemplates[Number(select.value)].fileName;
-    const resp = await fetch(`templates/${fileName}`);
-    const data = await resp.text();
-    if (!data) return;
-    let newTemplate: templateT = { body: data };
-    const t = (newTemplate.body as string).match(/<title>(?<name>.*)<\/title>/);
-    newTemplate.name = t?.groups?.name ?? "";
+  async function addFile(data: string) {
+    let newTemplate: templateT = extractVariables(data);
+    if (newTemplate.properties.name == "") return;
 
     newTemplate.id = crypto.randomUUID();
     setTemplate(newTemplate.id);
@@ -163,9 +184,49 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
       ref.current.close();
   }
 
-  const options = availableTemplates.map(
-    (v, i) => (<option key={v.fileName} value={i}>{v.name}</option>)
-  )
+  function getData() {
+    startTransition(async () => {
+      try {
+        const resp = await fetch(`http://10.0.1.140/api/files?offset=${offset}`);
+        const d: fileDatabaseListT = await resp.json();
+        setDatabaseData(d);
+        setSelectedTemplate(0);
+      } catch (err) { }
+    })
+  };
+
+  function like(id: number) {
+    fetch(`http://10.0.1.140/api/files/${id}/like`, {
+      method: 'PATCH'
+    })
+      .then(_ => getData());
+  }
+
+  function download(id: number) {
+    fetch(`http://10.0.1.140/api/files/${id}/content`)
+      .then(resp => resp.text())
+      .then(data => addFile(data));
+  }
+
+  function nextPage() {
+    const newOffset = Math.min(offset + databaseData.pageSize, databaseData.maxOffset - databaseData.maxOffset % databaseData.pageSize);
+    if (newOffset === offset) return;
+    setOffset(newOffset);
+  }
+
+  function prevPage() {
+    const newOffset = Math.max(offset - databaseData.pageSize, 0);
+    if (newOffset === offset) return;
+    setOffset(newOffset);
+  }
+
+  useEffect(() => {
+    getData();
+  }, [offset]);
+
+  const options = databaseData.data.map(
+    (v, i) => (<option key={v.id} value={i}>{v.name}</option>)
+  );
 
   return (
     <>
@@ -176,38 +237,27 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         <div id='templateDownloadDialog'>
           <div className='top'>
             <select id='templateSearchSelect' onChange={e => setSelectedTemplate(Number(e.target.value))}>{options}</select>
-            <button onClick={addFile}>Get Template</button>
+            <button onClick={prevPage}>\-</button>
+            {isPending && <b>L</b>}
+            {!isPending && <b>D</b>}
+            <button onClick={nextPage}>-/</button>
+            <button onClick={() => getData()}>Refresh</button>
           </div>
-          <h4>Description: </h4>
-          <p>{
-            availableTemplates[selectedTemplate].description
-              ? availableTemplates[selectedTemplate].description
-              : "None"
-          }</p>
-          <h4>Primary Use: </h4>
-          <p>{
-            availableTemplates[selectedTemplate].primaryUse
-              ? availableTemplates[selectedTemplate].primaryUse
-              : "None"
-          }</p>
-          <h4>Expected Limits: </h4>
-          {
-            availableTemplates[selectedTemplate].expectedLimits
-              ? <ul>{availableTemplates[selectedTemplate].expectedLimits.map(v => <li key={v}>{v}</li>)}</ul>
-              : <p>{"None"}</p>
+          {isPending && databaseData.data.length === 0 && <h3>Loading data...</h3>}
+          {databaseData.data.length !== 0 &&
+            <div className='exportStoreEntry'>
+              <h4>Name</h4>
+              <p>{databaseData.data[selectedTemplate].name}</p>
+              <h4>Downloads</h4>
+              <span>{databaseData.data[selectedTemplate].downloads}</span>
+              <h4>Likes</h4>
+              <span>{databaseData.data[selectedTemplate].likes}</span>
+              <div className='buttons'>
+                <button onClick={() => download(databaseData.data[selectedTemplate].id)}>Download</button>
+                <button onClick={() => like(databaseData.data[selectedTemplate].id)}>Like</button>
+              </div>
+            </div>
           }
-          <h4>Expected Regions: </h4>
-          {
-            availableTemplates[selectedTemplate].expectedRegions
-              ? <ul>{availableTemplates[selectedTemplate].expectedRegions.map(v => <li key={v}>{v}</li>)}</ul>
-              : <p>{"None"}</p>
-          }
-          <h4>Uses MAC: </h4>
-          <p>{
-            availableTemplates[selectedTemplate].usesMAC
-              ? "Yes"
-              : "No"
-          }</p>
         </div>
       </dialog>
     </>
@@ -217,14 +267,16 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
 function extractVariables(source: string): templateT {
   // If using the comment-header approach:
   const match = source.match(/^<!--\s*(\{[\s\S]*?\})\s*-->/m);
-  if (!match) return { body: "" }
-  const data = JSON.parse(match[1])
-  return data;
+  if (!match) return { body: "", properties: createProperties() };
+  const props = JSON.parse(match[1]);
+  const template: templateT = { body: source, properties: createProperties(props) };
+  console.log(template);
+  return template;
 }
 
 function ExportHeader({ setTemplate, activeTemplate }: { setTemplate: (arg: string) => void, activeTemplate: string }): ReactNode {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-  const options = templates.sort((a, b) => a.name?.localeCompare(b.name ?? "") ?? -1).map(t => <option key={t.id} value={t.id}>{t.name}</option>)
+  const options = templates.sort((a, b) => a.properties.name?.localeCompare(b.properties.name ?? "") ?? -1).map(t => <option key={t.id} value={t.id}>{t.properties.name}</option>)
 
   function openFile() {
     const input = document.createElement('input');
@@ -524,8 +576,8 @@ function generateTemplate(globalData: globalsT, template: templateT): string {
 function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: string, setUserValues: (arg0: string, arg1: string) => void }): ReactNode {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
   const temp = templates.find(f => f.id === activeTemplate);
-  if (!temp || !temp.inputs) return <></>
-  let inputs = temp.inputs;
+  if (!temp || !temp.properties.inputs) return <></>
+  let inputs = temp.properties.inputs;
 
   if (inputs.length === 0) return <></>;
   return (

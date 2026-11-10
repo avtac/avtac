@@ -88,4 +88,20 @@
     margin-block-start: .15em;
     margin-block-end: .15em;
   }
+
+  .exportStoreEntry {
+    display: grid;
+    grid-template-columns: 7rem auto;
+
+
+    .buttons {
+      display: flex;
+      justify-content: space-around;
+      grid-column: span 2;
+    }
+
+    p {
+      text-indent: unset;
+    }
+  }
 }
