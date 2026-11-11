@@ -68,40 +68,30 @@
 #templateDownloadDialog {
   width: 30rem;
   max-width: 80vw;
+  height: calc((.5rem + 3rem + var(--margin-size) * 2) * 3 + 2rem);
   max-height: 80vh;
   display: grid;
   align-items: start;
   align-content: start;
   color: var(--text-h);
   overflow: auto;
+  row-gap: .5rem;
 
   .top {
     display: flex;
     justify-content: space-between;
   }
 
-  p {
-    text-indent: 1.5rem;
-  }
-
-  ul {
-    margin-block-start: .15em;
-    margin-block-end: .15em;
-  }
-
   .exportStoreEntry {
     display: grid;
-    grid-template-columns: 7rem auto;
-
-
-    .buttons {
-      display: flex;
-      justify-content: space-around;
-      grid-column: span 2;
-    }
-
-    p {
-      text-indent: unset;
-    }
+    grid-template-columns: auto 6rem 3rem 4rem;
+    margin: 0px 14px;
+    height: 3rem;
+    cursor: pointer;
   }
+
+}
+
+.exportStoreEntry:hover {
+  background-color: oklch(from var(--sub-region-bg) .2 c h);
 }

@@ -13,7 +13,14 @@ import Diagram from '../../Diagram';
 import { Subregion } from '@avtac/ui/Layout';
 import dayjs from 'dayjs';
 
-interface templateInputProperties {
+declare module 'react' {
+  interface ButtonHTMLAttributes<T> extends HTMLAttributes<T> {
+    command?: 'toggle-popover' | 'show-popover' | 'hide-popover' | 'show-modal' | 'close' | 'request-close' | (string & {});
+    commandfor?: string;
+  }
+}
+
+interface templateInputPropertiesT {
   name: string;
   label: string;
   type: "text" | "number" | "date" | "select";
@@ -21,18 +28,18 @@ interface templateInputProperties {
   options?: string[]; // for "select"
 }
 
-interface templateProperties {
+interface templatePropertiesT {
   fileName: string;
   name: string;
   description: string;
   size: ("Letter" | "A4" | "Legal");
-  inputs: templateInputProperties[];
+  inputs: templateInputPropertiesT[];
   uses: string;
   limits: string[]; // List of names of limits that are used
   regions: string[]; // List of names of regions that are used
 }
 
-const defaultProperties: templateProperties = {
+const defaultProperties: templatePropertiesT = {
   fileName: "",
   name: "",
   description: "",
@@ -43,21 +50,17 @@ const defaultProperties: templateProperties = {
   regions: []
 }
 
-function createProperties(options?: Partial<templateProperties>): templateProperties {
+function createProperties(options?: Partial<templatePropertiesT>): templatePropertiesT {
   return {
     ...defaultProperties,
     ...options,
   };
 }
 
-// Available Templates: This is where the template data is stored so clients
-// have the information on what is available.
-// Add to this list with the appropriate information along with the template
-// in the public/templates folder to make more templates available
-
 interface templateT {
   id?: string;
-  properties: templateProperties;
+  serverId?: number;
+  properties: templatePropertiesT;
   body: string;
 }
 
@@ -156,6 +159,113 @@ interface fileDatabaseDataT {
   downloads: number;
   likes: number;
   dateCreated: number;
+  properties: templatePropertiesT;
+}
+
+const defaultDatabaseData: fileDatabaseDataT = {
+  name: "",
+  id: -1,
+  downloads: -1,
+  likes: -1,
+  dateCreated: -1,
+  properties: defaultProperties,
+}
+
+function createDatabaseData(options?: Partial<fileDatabaseDataT>): fileDatabaseDataT {
+  return {
+    ...defaultDatabaseData,
+    ...options,
+  };
+}
+
+async function addFile(id: number, setTemplate: (arv0: string) => void) {
+  function downloadRequest(id: number): Promise<string> {
+    return fetch(`http://10.0.1.140/api/files/${id}/content`).then(resp => resp.text())
+  }
+
+  const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
+
+  // Determine if the file has already been downloaded
+  const index = templates.findIndex(t => t.serverId === id);
+  if (index < 0) {
+    const data = await downloadRequest(id)
+
+    let newTemplate: templateT = extractVariables(data);
+    if (newTemplate.properties.name == "") return;
+    newTemplate.serverId = id;
+    newTemplate.id = crypto.randomUUID();
+
+    templates.push(newTemplate);
+    setTemplate(newTemplate.id);
+    localStorage.setItem("savedTemplates", JSON.stringify(templates));
+  } else {
+    // TODO: Should this be done if there is an update
+    // templates[index] = newTemplate;
+    templates[index].id && setTemplate(templates[index].id);
+  }
+}
+
+function detailsRequest(id: number): Promise<any> {
+  // Check local storage first before making the request
+  // Determine if the file has already been downloaded
+  const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
+  const index = templates.findIndex(t => t.serverId === id);
+  if (index < 0)
+    // Expects a json of fileDatabaseDataT
+    return fetch(`http://10.0.1.140/api/files/${id}`)
+      .then(resp => resp.json());
+  else {
+    return new Promise((resolve) => {
+      resolve(createDatabaseData({ id: id, properties: templates[index].properties }));
+    })
+  }
+}
+
+function likeRequest(id: number): Promise<Response> {
+  return fetch(`http://10.0.1.140/api/files/${id}/like`, {
+    method: 'PATCH'
+  })
+}
+
+async function getListRequest(offset: number): Promise<any> {
+  // TODO: Limit request rate
+  const resp = await fetch(`http://10.0.1.140/api/files?offset=${offset}`)
+  const json = await resp.json();
+  return json;
+}
+
+function TemplateDetails({ handleDetails, setTemplate, id }: { handleDetails: () => void, setTemplate: (argv: string) => void, id: number }): ReactNode {
+  const [isPending, startTransition] = useTransition();
+  const [data, setData] = useState(undefined as (fileDatabaseDataT | undefined));
+
+  useEffect(() => {
+    startTransition(async () => {
+      const d = await detailsRequest(id);
+      setData(createDatabaseData(d));
+    })
+  }, []);
+
+  return (
+    <dialog
+      id="templateDetails"
+      closedby='any'
+      open
+      onCancel={handleDetails}>
+      <div>
+        {isPending && <div>Loading...</div>}
+        {!isPending && data &&
+          <>
+            <h3>{data.properties.name}</h3>
+            {data.properties.description !== "" && <p>{data.properties.description}</p>}
+            {data.properties.limits && data.properties.limits.length > 0 && data.properties.limits.map(v => <p>{v}</p>)}
+            {data.properties.regions && data.properties.regions.length > 0 && data.properties.regions.map(v => <p>{v}</p>)}
+            <button onClick={() => { addFile(id, setTemplate); handleDetails(); }}>Download</button>
+            <button onClick={() => { likeRequest(id); }}>Like</button>
+          </>
+        }
+      </div>
+    </dialog>
+  )
 }
 
 interface templateBrowserProps {
@@ -164,52 +274,15 @@ interface templateBrowserProps {
 
 function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   const ref: RefObject<null | HTMLDialogElement> = useRef(null);
-  const [selectedTemplate, setSelectedTemplate] = useState(0);
+  const isMounted = useRef(false);
   const [isPending, startTransition] = useTransition()
   const [databaseData, setDatabaseData] = useState(defaultFileDatabaseList());
   const [offset, setOffset] = useState(0);
+  const [showDetails, setShowDetails] = useState(-1)
 
-  async function addFile(data: string) {
-    let newTemplate: templateT = extractVariables(data);
-    if (newTemplate.properties.name == "") return;
-
-    newTemplate.id = crypto.randomUUID();
-    setTemplate(newTemplate.id);
-    const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-    const index = templates.findIndex(t => t.id === newTemplate.id);
-    if (index < 0) templates.push(newTemplate);
-    else templates[index] = newTemplate;
-    localStorage.setItem("savedTemplates", JSON.stringify(templates));
-    if (ref.current)
-      ref.current.close();
-  }
-
-  function getData() {
-    startTransition(async () => {
-      try {
-        const resp = await fetch(`http://10.0.1.140/api/files?offset=${offset}`);
-        const d: fileDatabaseListT = await resp.json();
-        setDatabaseData(d);
-        setSelectedTemplate(0);
-      } catch (err) { }
-    })
-  };
-
-  function like(id: number) {
-    fetch(`http://10.0.1.140/api/files/${id}/like`, {
-      method: 'PATCH'
-    })
-      .then(_ => getData());
-  }
-
-  function download(id: number) {
-    fetch(`http://10.0.1.140/api/files/${id}/content`)
-      .then(resp => resp.text())
-      .then(data => addFile(data));
-  }
-
+  const totalPages = Math.floor(databaseData.maxOffset / databaseData.pageSize) + 1;
   function nextPage() {
-    const newOffset = Math.min(offset + databaseData.pageSize, databaseData.maxOffset - databaseData.maxOffset % databaseData.pageSize);
+    const newOffset = Math.min(offset + databaseData.pageSize, Math.max((totalPages - 1) * databaseData.pageSize, 0));
     if (newOffset === offset) return;
     setOffset(newOffset);
   }
@@ -220,47 +293,63 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
     setOffset(newOffset);
   }
 
+  function getListData() {
+    startTransition(async () => {
+      try {
+        const d: fileDatabaseListT = await getListRequest(offset);
+        setDatabaseData(d);
+      } catch (err) { }
+    })
+  };
+
   useEffect(() => {
-    getData();
+    if (isMounted.current) getListData();
+    else isMounted.current = true;
   }, [offset]);
 
-  const options = databaseData.data.map(
-    (v, i) => (<option key={v.id} value={i}>{v.name}</option>)
-  );
+  function handleDetails(id: number) {
+    setShowDetails(id);
+  }
 
-  return (
-    <>
-      <button onClick={() => { if (ref.current) ref.current.showModal() }}>Browse Templates</button>
-      <dialog
-        ref={ref}
-        closedby='any'>
-        <div id='templateDownloadDialog'>
-          <div className='top'>
-            <select id='templateSearchSelect' onChange={e => setSelectedTemplate(Number(e.target.value))}>{options}</select>
-            <button onClick={prevPage}>\-</button>
-            {isPending && <b>L</b>}
-            {!isPending && <b>D</b>}
-            <button onClick={nextPage}>-/</button>
-            <button onClick={() => getData()}>Refresh</button>
-          </div>
-          {isPending && databaseData.data.length === 0 && <h3>Loading data...</h3>}
-          {databaseData.data.length !== 0 &&
-            <div className='exportStoreEntry'>
-              <h4>Name</h4>
-              <p>{databaseData.data[selectedTemplate].name}</p>
-              <h4>Downloads</h4>
-              <span>{databaseData.data[selectedTemplate].downloads}</span>
-              <h4>Likes</h4>
-              <span>{databaseData.data[selectedTemplate].likes}</span>
-              <div className='buttons'>
-                <button onClick={() => download(databaseData.data[selectedTemplate].id)}>Download</button>
-                <button onClick={() => like(databaseData.data[selectedTemplate].id)}>Like</button>
-              </div>
-            </div>
-          }
+  const blocks = databaseData.data.map(v => {
+    return (
+      <Subregion className='exportStoreEntry' onClick={() => handleDetails(v.id)} >
+        <div>
+          <p>Name</p>
+          <p>{v.name}</p>
         </div>
-      </dialog>
-    </>
+        <div>
+          <p>Downloads</p>
+          <p>{v.downloads}</p>
+        </div>
+        <div>
+          <p>Likes</p>
+          <p>{v.likes}</p>
+        </div>
+      </Subregion>
+    )
+  });
+
+  // TODO: Cache a few template details to reduce requests
+  return (
+    <dialog
+      ref={ref}
+      id='templateDownload'
+      closedby='any'>
+      <div id='templateDownloadDialog'>
+        <div className='top'>
+          <div>
+            <button disabled={offset === 0} onClick={prevPage}>&lt;-</button>
+            <span>{offset / databaseData.pageSize + 1} / {totalPages}</span>
+            <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}>-&gt;</button>
+          </div>
+          <button onClick={getListData}>Refresh</button>
+        </div>
+        {isPending && <h3>Loading data...</h3>}
+        {showDetails > 0 && <TemplateDetails handleDetails={() => handleDetails(-1)} id={showDetails} setTemplate={setTemplate} />}
+        {!isPending && blocks}
+      </div>
+    </dialog>
   )
 }
 
@@ -277,6 +366,7 @@ function extractVariables(source: string): templateT {
 function ExportHeader({ setTemplate, activeTemplate }: { setTemplate: (arg: string) => void, activeTemplate: string }): ReactNode {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
   const options = templates.sort((a, b) => a.properties.name?.localeCompare(b.properties.name ?? "") ?? -1).map(t => <option key={t.id} value={t.id}>{t.properties.name}</option>)
+  const [showDialog, setShowDialog] = useState(false);
 
   function openFile() {
     const input = document.createElement('input');
@@ -330,7 +420,8 @@ function ExportHeader({ setTemplate, activeTemplate }: { setTemplate: (arg: stri
           }}>{options}</select>
       </div>
       <div id='exportButtonHolder'>
-        <TemplateBrowser setTemplate={setTemplate} />
+        {showDialog && <TemplateBrowser setTemplate={setTemplate} />}
+        <button onClick={() => { setShowDialog(true) }} command="show-modal" commandfor="templateDownload">Browse Templates</button>
         <button
           id="openFile"
           onClick={openFile}>Upload Template</button>

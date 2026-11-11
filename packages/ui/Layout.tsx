@@ -1,4 +1,4 @@
-import { Children, isValidElement, useEffect, useState, type ReactNode } from 'react';
+import { Children, isValidElement, useEffect, useState, type HTMLAttributes, type ReactNode } from 'react';
 import './Layout.css'
 import { tableSort } from './tableSort.ts';
 
@@ -10,7 +10,7 @@ interface nameProps {
   name?: string;
 }
 
-interface regionProps extends childrenProps, nameProps {
+interface regionProps extends nameProps, HTMLAttributes<HTMLDivElement> {
   id?: string,
   className?: string,
 }
@@ -23,9 +23,9 @@ function Region({ children, id, className }: regionProps) {
   );
 }
 
-function Subregion({ children, id, className }: regionProps) {
+function Subregion({ children, id, className, ...props }: regionProps) {
   return (
-    <div className={'subregion' + (className ? ' ' + className : '')} id={id}>
+    <div className={'subregion' + (className ? ' ' + className : '')} id={id} {...props}>
       {children}
     </div>
   );

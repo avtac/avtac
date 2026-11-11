@@ -182,6 +182,7 @@ button {
   border: 0px;
   border-radius: 5px;
   cursor: pointer;
+  user-select: none;
 
   @media (max-width: 580px) {
     padding: 2px;
@@ -202,6 +203,11 @@ button:hover:not(.hiddenButton) {
 
 button:active:not(.hiddenButton) {
   background-color: oklch(from var(--button-bg) calc(l * 0.85) c h);
+}
+
+button:disabled:not(.hiddenButton) {
+  background-color: oklch(from var(--button-bg) calc(l * 0.25) c h);
+  cursor: default;
 }
 
 /* Table Styles */
