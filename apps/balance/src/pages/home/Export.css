@@ -66,32 +66,79 @@
 }
 
 #templateDownloadDialog {
+  display: flex;
+  flex-direction: column;
   width: 30rem;
   max-width: 80vw;
-  height: calc((.5rem + 3rem + var(--margin-size) * 2) * 3 + 2rem);
+  height: calc((.5rem + 3rem + var(--margin-size) * 2) * 5 + 5rem);
   max-height: 80vh;
-  display: grid;
-  align-items: start;
-  align-content: start;
-  color: var(--text-h);
-  overflow: auto;
+  overflow: visible;
   row-gap: .5rem;
 
-  .top {
-    display: flex;
-    justify-content: space-between;
+  #templateDownloadDialogTop {
+    margin-left: auto;
   }
 
-  .exportStoreEntry {
+  #templateDownloadDialogMiddle {
     display: grid;
-    grid-template-columns: auto 6rem 3rem 4rem;
-    margin: 0px 14px;
-    height: 3rem;
-    cursor: pointer;
+    align-items: start;
+    align-content: start;
+    row-gap: .5rem;
+    flex: 1;
+
+    .exportStoreEntry {
+      display: flex;
+      justify-content: space-between;
+      margin: 0px 14px;
+      height: 3rem;
+      cursor: pointer;
+
+      h5 {
+        margin: auto 0px;
+      }
+
+      .counts {
+        display: grid;
+        grid-template-columns: 6rem auto;
+      }
+    }
+
+    .downloaded {
+      background-color: oklch(from var(--sub-region-bg) calc(l * .85) c h);
+    }
   }
 
+  #templateDownloadDialogBottom {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: .5rem;
+  }
+}
+
+#templateDownload {
+  top: 0px;
+  bottom: 0px;
 }
 
 .exportStoreEntry:hover {
-  background-color: oklch(from var(--sub-region-bg) .2 c h);
+  background-color: oklch(from var(--sub-region-bg) calc(l * .7) c h) !important;
+}
+
+.templateDetails {
+  width: 20rem;
+  top: 0px;
+  bottom: 0px;
+
+  .description {
+    margin-left: 1rem;
+    font-size: .9rem;
+  }
+
+  .buttons {
+    display: flex;
+    justify-content: center;
+
+    gap: 2rem;
+  }
 }

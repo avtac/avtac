@@ -3,7 +3,7 @@ import mainStyle from '@avtac/ui/global.css?inline'
 import diagramStyle from '../../Diagram.css?inline'
 import graphStyle from '../../Graph.css?inline'
 import Handlebars from "handlebars"
-import { useMemo, useContext, useEffect, useRef, useState, type ReactNode, type RefObject, useTransition } from "react";
+import { useMemo, useContext, useEffect, useRef, useState, type ReactNode, type RefObject, useTransition, type HTMLAttributes, type DialogHTMLAttributes, type HtmlHTMLAttributes } from "react";
 import { renderToString } from 'react-dom/server';
 import { baseFuelUnit, baseLengthUnit, baseWeightUnit, DiagramModes, type aircraftT, type fuelUnitsT, type lengthUnitsT, type loadingT, type nameProps, type setupT, type weightUnitsT } from "../../Types";
 import { calculateBalanceForLanding, calculateBalanceForOperationConfig, calculateBalanceForTakeoff, calculateBalanceForZeroFuel, calculateEmptyBalanceForConfig, calculateMAC, roundNumber, validateAircraft, withinRegion } from '../../utility';
@@ -229,41 +229,77 @@ function likeRequest(id: number): Promise<Response> {
 
 async function getListRequest(offset: number): Promise<any> {
   // TODO: Limit request rate
-  const resp = await fetch(`http://10.0.1.140/api/files?offset=${offset}`)
+  const resp = await fetch(`http://10.0.1.140/api/files?offset=${offset}&count=5`);
   const json = await resp.json();
   return json;
 }
 
-function TemplateDetails({ handleDetails, setTemplate, id }: { handleDetails: () => void, setTemplate: (argv: string) => void, id: number }): ReactNode {
+interface TemplateDetailsProps {
+  handleDetails: () => void;
+  setTemplate: (argv: string) => void, templateId: number;
+  ref: RefObject<(null | HTMLDialogElement)>;
+}
+
+function TemplateDetails({ handleDetails, setTemplate, templateId: templateId, ref }: TemplateDetailsProps): ReactNode {
   const [isPending, startTransition] = useTransition();
   const [data, setData] = useState(undefined as (fileDatabaseDataT | undefined));
 
   useEffect(() => {
-    startTransition(async () => {
-      const d = await detailsRequest(id);
-      setData(createDatabaseData(d));
-    })
-  }, []);
+    if (templateId < 0) {
+      setData(defaultDatabaseData);
+      return;
+    }
+    if (!isDownloaded(templateId))
+      startTransition(async () => {
+        const d = await detailsRequest(templateId);
+        setData(createDatabaseData(d));
+      })
+    else {
+      const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
+      const index = templates.findIndex(t => t.serverId === templateId);
+      setData(createDatabaseData({ id: templateId, properties: templates[index].properties }));
+    }
+  }, [templateId]);
 
   return (
     <dialog
-      id="templateDetails"
+      ref={ref}
+      className="templateDetails"
       closedby='any'
-      open
       onCancel={handleDetails}>
-      <div>
-        {isPending && <div>Loading...</div>}
-        {!isPending && data &&
-          <>
-            <h3>{data.properties.name}</h3>
-            {data.properties.description !== "" && <p>{data.properties.description}</p>}
-            {data.properties.limits && data.properties.limits.length > 0 && data.properties.limits.map(v => <p>{v}</p>)}
-            {data.properties.regions && data.properties.regions.length > 0 && data.properties.regions.map(v => <p>{v}</p>)}
-            <button onClick={() => { addFile(id, setTemplate); handleDetails(); }}>Download</button>
-            <button onClick={() => { likeRequest(id); }}>Like</button>
-          </>
-        }
-      </div>
+      {templateId > 0 && isPending && <div>Loading...</div>}
+      {templateId > 0 && !isPending && data &&
+        <>
+          <h3>{data.properties.name}</h3>
+          {data.properties.description !== "" && <p className='description'>{data.properties.description}</p>}
+          {data.properties.inputs && data.properties.inputs.length > 0 &&
+            <div>
+              <h4>Inputs</h4>
+              {data.properties.inputs.map(v => {
+                return (<>
+                  <p style={{ paddingLeft: "1rem" }}>{v.label}: {v.type} {v.options && v.options.join(", ")}</p>
+                </>)
+              })}
+            </div>
+          }
+          {data.properties.limits && data.properties.limits.length > 0 &&
+            <div>
+              <h4>Limits</h4>
+              {data.properties.limits.map(v => <p style={{ paddingLeft: "1rem" }}>{v}</p>)}
+            </div>
+          }
+          {data.properties.regions && data.properties.regions.length > 0 &&
+            <div>
+              <h4>Regions</h4>
+              {data.properties.regions.map(v => <p style={{ paddingLeft: "1rem" }}>{v}</p>)}
+            </div>
+          }
+          <div className='buttons'>
+            <button onClick={() => { addFile(templateId, setTemplate); handleDetails(); }}>Get</button>
+            <button onClick={() => { likeRequest(templateId); }}>Like</button>
+          </div>
+        </>
+      }
     </dialog>
   )
 }
@@ -272,8 +308,14 @@ interface templateBrowserProps {
   setTemplate: (argv: string) => void;
 }
 
+function isDownloaded(id: number) {
+  const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
+  const found = templates.some(t => t.serverId === id);
+  return found
+}
+
 function TemplateBrowser({ setTemplate }: templateBrowserProps) {
-  const ref: RefObject<null | HTMLDialogElement> = useRef(null);
+  const dialogRef: RefObject<null | HTMLDialogElement> = useRef(null);
   const isMounted = useRef(false);
   const [isPending, startTransition] = useTransition()
   const [databaseData, setDatabaseData] = useState(defaultFileDatabaseList());
@@ -298,7 +340,9 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
       try {
         const d: fileDatabaseListT = await getListRequest(offset);
         setDatabaseData(d);
-      } catch (err) { }
+      } catch (err) {
+        setDatabaseData({ maxOffset: databaseData.maxOffset, pageSize: databaseData.pageSize, data: [] });
+      }
     })
   };
 
@@ -309,21 +353,24 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
 
   function handleDetails(id: number) {
     setShowDetails(id);
+    if (id >= 0)
+      dialogRef.current?.showModal();
+    else
+      dialogRef.current?.close();
   }
 
   const blocks = databaseData.data.map(v => {
+    const downloaded = isDownloaded(v.id);
     return (
-      <Subregion className='exportStoreEntry' onClick={() => handleDetails(v.id)} >
+      <Subregion className={'exportStoreEntry' + (downloaded ? ' downloaded' : '')} onClick={() => handleDetails(v.id)} >
         <div>
-          <p>Name</p>
+          <h5>Name{downloaded && ": Saved"}</h5>
           <p>{v.name}</p>
         </div>
-        <div>
-          <p>Downloads</p>
+        <div className='counts'>
+          <h5>Downloads</h5>
           <p>{v.downloads}</p>
-        </div>
-        <div>
-          <p>Likes</p>
+          <h5>Likes</h5>
           <p>{v.likes}</p>
         </div>
       </Subregion>
@@ -332,24 +379,27 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
 
   // TODO: Cache a few template details to reduce requests
   return (
-    <dialog
-      ref={ref}
-      id='templateDownload'
-      closedby='any'>
-      <div id='templateDownloadDialog'>
-        <div className='top'>
-          <div>
+    <>
+      <dialog
+        id='templateDownload'
+        closedby='any'>
+        <div id='templateDownloadDialog'>
+          <div id='templateDownloadDialogTop'>
+            <button onClick={getListData}>Refresh</button>
+          </div>
+          <div id='templateDownloadDialogMiddle'>
+            {isPending && <h3>Loading data...</h3>}
+            {!isPending && blocks}
+          </div>
+          <div id='templateDownloadDialogBottom'>
             <button disabled={offset === 0} onClick={prevPage}>&lt;-</button>
             <span>{offset / databaseData.pageSize + 1} / {totalPages}</span>
             <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}>-&gt;</button>
           </div>
-          <button onClick={getListData}>Refresh</button>
         </div>
-        {isPending && <h3>Loading data...</h3>}
-        {showDetails > 0 && <TemplateDetails handleDetails={() => handleDetails(-1)} id={showDetails} setTemplate={setTemplate} />}
-        {!isPending && blocks}
-      </div>
-    </dialog>
+      </dialog>
+      <TemplateDetails ref={dialogRef} handleDetails={() => handleDetails(-1)} templateId={showDetails} setTemplate={setTemplate} />
+    </>
   )
 }
 
