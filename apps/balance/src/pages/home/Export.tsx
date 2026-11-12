@@ -3,7 +3,7 @@ import mainStyle from '@avtac/ui/global.css?inline'
 import diagramStyle from '../../Diagram.css?inline'
 import graphStyle from '../../Graph.css?inline'
 import Handlebars from "handlebars"
-import { useMemo, useContext, useEffect, useRef, useState, type ReactNode, type RefObject, useTransition, type HTMLAttributes, type DialogHTMLAttributes, type HtmlHTMLAttributes } from "react";
+import { useMemo, useContext, useEffect, useRef, useState, type ReactNode, type RefObject, useTransition } from "react";
 import { renderToString } from 'react-dom/server';
 import { baseFuelUnit, baseLengthUnit, baseWeightUnit, DiagramModes, type aircraftT, type fuelUnitsT, type lengthUnitsT, type loadingT, type nameProps, type setupT, type weightUnitsT } from "../../Types";
 import { calculateBalanceForLanding, calculateBalanceForOperationConfig, calculateBalanceForTakeoff, calculateBalanceForZeroFuel, calculateEmptyBalanceForConfig, calculateMAC, roundNumber, validateAircraft, withinRegion } from '../../utility';
@@ -50,17 +50,9 @@ const defaultProperties: templatePropertiesT = {
   regions: []
 }
 
-function createProperties(options?: Partial<templatePropertiesT>): templatePropertiesT {
-  return {
-    ...defaultProperties,
-    ...options,
-  };
-}
-
 interface templateT {
   id?: string;
-  serverId?: number;
-  properties: templatePropertiesT;
+  data: fileDatabaseDataT;
   body: string;
 }
 
@@ -156,6 +148,8 @@ function defaultFileDatabaseList(): fileDatabaseListT {
 interface fileDatabaseDataT {
   name: string;
   id: number;
+  uuid: string;
+  version: number;
   downloads: number;
   likes: number;
   dateCreated: number;
@@ -165,6 +159,8 @@ interface fileDatabaseDataT {
 const defaultDatabaseData: fileDatabaseDataT = {
   name: "",
   id: -1,
+  uuid: "",
+  version: -1,
   downloads: -1,
   likes: -1,
   dateCreated: -1,
@@ -178,7 +174,7 @@ function createDatabaseData(options?: Partial<fileDatabaseDataT>): fileDatabaseD
   };
 }
 
-async function addFile(id: number, setTemplate: (arv0: string) => void) {
+async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDatabaseDataT) {
   function downloadRequest(id: number): Promise<string> {
     return fetch(`http://10.0.1.140/api/files/${id}/content`).then(resp => resp.text())
   }
@@ -186,14 +182,14 @@ async function addFile(id: number, setTemplate: (arv0: string) => void) {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
 
   // Determine if the file has already been downloaded
-  const index = templates.findIndex(t => t.serverId === id);
+  const index = templates.findIndex(t => t.data.id === fileInfo.id);
   if (index < 0) {
-    const data = await downloadRequest(id)
+    const fileString = await downloadRequest(fileInfo.id)
 
-    let newTemplate: templateT = extractVariables(data);
-    if (newTemplate.properties.name == "") return;
-    newTemplate.serverId = id;
-    newTemplate.id = crypto.randomUUID();
+    let newTemplate: templateT = extractVariables(fileString);
+    newTemplate.data = fileInfo;
+    if (newTemplate.data.name == "") return;
+    newTemplate.id = crypto.randomUUID(); // Client unique id for every template
 
     templates.push(newTemplate);
     setTemplate(newTemplate.id);
@@ -209,14 +205,14 @@ function detailsRequest(id: number): Promise<any> {
   // Check local storage first before making the request
   // Determine if the file has already been downloaded
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-  const index = templates.findIndex(t => t.serverId === id);
+  const index = templates.findIndex(t => t.data.id === id);
   if (index < 0)
     // Expects a json of fileDatabaseDataT
     return fetch(`http://10.0.1.140/api/files/${id}`)
       .then(resp => resp.json());
   else {
     return new Promise((resolve) => {
-      resolve(createDatabaseData({ id: id, properties: templates[index].properties }));
+      resolve(templates[index].data);
     })
   }
 }
@@ -235,12 +231,12 @@ async function getListRequest(offset: number): Promise<any> {
 }
 
 interface TemplateDetailsProps {
-  handleDetails: () => void;
+  closeDetails: () => void;
   setTemplate: (argv: string) => void, templateId: number;
   ref: RefObject<(null | HTMLDialogElement)>;
 }
 
-function TemplateDetails({ handleDetails, setTemplate, templateId: templateId, ref }: TemplateDetailsProps): ReactNode {
+function TemplateDetails({ closeDetails, setTemplate, templateId, ref }: TemplateDetailsProps): ReactNode {
   const [isPending, startTransition] = useTransition();
   const [data, setData] = useState(undefined as (fileDatabaseDataT | undefined));
 
@@ -256,8 +252,8 @@ function TemplateDetails({ handleDetails, setTemplate, templateId: templateId, r
       })
     else {
       const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-      const index = templates.findIndex(t => t.serverId === templateId);
-      setData(createDatabaseData({ id: templateId, properties: templates[index].properties }));
+      const index = templates.findIndex(t => t.data.id === templateId);
+      setData(templates[index].data);
     }
   }, [templateId]);
 
@@ -266,12 +262,14 @@ function TemplateDetails({ handleDetails, setTemplate, templateId: templateId, r
       ref={ref}
       className="templateDetails"
       closedby='any'
-      onCancel={handleDetails}>
+      onCancel={closeDetails}>
       {templateId > 0 && isPending && <div>Loading...</div>}
       {templateId > 0 && !isPending && data &&
         <>
           <h3>{data.properties.name}</h3>
           {data.properties.description !== "" && <p className='description'>{data.properties.description}</p>}
+          {data.dateCreated > 0 && <p>Last Updated: {dayjs(data.dateCreated).format("MM/DD/YYYY HH:MM:ss")}</p>}
+          {data.version >= 0 && <p>Version: {data.version}</p>}
           {data.properties.inputs && data.properties.inputs.length > 0 &&
             <div>
               <h4>Inputs</h4>
@@ -295,7 +293,7 @@ function TemplateDetails({ handleDetails, setTemplate, templateId: templateId, r
             </div>
           }
           <div className='buttons'>
-            <button onClick={() => { addFile(templateId, setTemplate); handleDetails(); }}>Get</button>
+            <button onClick={() => { addFile(setTemplate, data); closeDetails(); }}>Get</button>
             <button onClick={() => { likeRequest(templateId); }}>Like</button>
           </div>
         </>
@@ -308,10 +306,21 @@ interface templateBrowserProps {
   setTemplate: (argv: string) => void;
 }
 
-function isDownloaded(id: number) {
+function isDownloaded(id: number): boolean {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-  const found = templates.some(t => t.serverId === id);
-  return found
+  const found = templates.some(t => t.data.id === id);
+  return found;
+}
+
+// State
+// -1: not downloaded
+// >=0: version
+function newestVersion(uuid: string): number {
+  const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
+  const found = templates.some(t => t.data.uuid === uuid);
+  if (!found) return -1;
+  const newest = templates.reduce((m, t) => t.data.uuid === uuid ? Math.max(t.data.version, m) : m, 0);
+  return newest;
 }
 
 function TemplateBrowser({ setTemplate }: templateBrowserProps) {
@@ -322,7 +331,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   const [offset, setOffset] = useState(0);
   const [showDetails, setShowDetails] = useState(-1)
 
-  const totalPages = Math.floor(databaseData.maxOffset / databaseData.pageSize) + 1;
+  const totalPages = databaseData.pageSize != 0 ? Math.floor(databaseData.maxOffset / databaseData.pageSize) + 1 : 1;
   function nextPage() {
     const newOffset = Math.min(offset + databaseData.pageSize, Math.max((totalPages - 1) * databaseData.pageSize, 0));
     if (newOffset === offset) return;
@@ -359,13 +368,15 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
       dialogRef.current?.close();
   }
 
-  const blocks = databaseData.data.map(v => {
-    const downloaded = isDownloaded(v.id);
+  const blocks = databaseData.data ? databaseData.data.map(v => {
+    const foundVersion = newestVersion(v.uuid);
+    const downloaded = foundVersion > 0;
+    const newest = foundVersion === v.version;
     return (
       <Subregion className={'exportStoreEntry' + (downloaded ? ' downloaded' : '')} onClick={() => handleDetails(v.id)} >
         <div>
-          <h5>Name{downloaded && ": Saved"}</h5>
-          <p>{v.name}</p>
+          <h5>Name{downloaded && ": Saved"}{downloaded && !newest && " v" + foundVersion}</h5>
+          <p>{v.name} v{v.version}</p>
         </div>
         <div className='counts'>
           <h5>Downloads</h5>
@@ -375,7 +386,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         </div>
       </Subregion>
     )
-  });
+  }) : <></>;
 
   // TODO: Cache a few template details to reduce requests
   return (
@@ -398,7 +409,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
           </div>
         </div>
       </dialog>
-      <TemplateDetails ref={dialogRef} handleDetails={() => handleDetails(-1)} templateId={showDetails} setTemplate={setTemplate} />
+      <TemplateDetails ref={dialogRef} closeDetails={() => handleDetails(-1)} templateId={showDetails} setTemplate={setTemplate} />
     </>
   )
 }
@@ -406,16 +417,21 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
 function extractVariables(source: string): templateT {
   // If using the comment-header approach:
   const match = source.match(/^<!--\s*(\{[\s\S]*?\})\s*-->/m);
-  if (!match) return { body: "", properties: createProperties() };
+  if (!match) return { body: "", data: createDatabaseData() };
   const props = JSON.parse(match[1]);
-  const template: templateT = { body: source, properties: createProperties(props) };
+  const template: templateT = { body: source, data: createDatabaseData({ properties: props }) };
   console.log(template);
   return template;
 }
 
 function ExportHeader({ setTemplate, activeTemplate }: { setTemplate: (arg: string) => void, activeTemplate: string }): ReactNode {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-  const options = templates.sort((a, b) => a.properties.name?.localeCompare(b.properties.name ?? "") ?? -1).map(t => <option key={t.id} value={t.id}>{t.properties.name}</option>)
+  const options = templates
+    .sort((a, b) => a.data.uuid?.localeCompare(b.data.uuid ?? "") ?? -1)
+    .map(t => {
+      const duplicated = templates.some(v => v.data.uuid === t.data.uuid && v.data.id !== t.data.id);
+      return <option key={t.id} value={t.id}>{t.data.properties.name}{duplicated && ` v${t.data.version}`}</option>
+    });
   const [showDialog, setShowDialog] = useState(false);
 
   function openFile() {
@@ -717,8 +733,8 @@ function generateTemplate(globalData: globalsT, template: templateT): string {
 function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: string, setUserValues: (arg0: string, arg1: string) => void }): ReactNode {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
   const temp = templates.find(f => f.id === activeTemplate);
-  if (!temp || !temp.properties.inputs) return <></>
-  let inputs = temp.properties.inputs;
+  if (!temp || !temp.data.properties.inputs) return <></>
+  let inputs = temp.data.properties.inputs;
 
   if (inputs.length === 0) return <></>;
   return (
