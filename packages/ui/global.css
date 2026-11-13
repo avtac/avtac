@@ -216,6 +216,20 @@ button:disabled:not(.hiddenButton) {
 
 /* Table Styles */
 
+th {
+  color: var(--text-h);
+  border-color: var(--border);
+}
+
+td {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+table {
+  border-collapse: collapse;
+}
+
 .sortable {
   cursor: pointer;
 }

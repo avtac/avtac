@@ -70,7 +70,7 @@
   flex-direction: column;
   min-width: 34rem;
   max-width: 80vw;
-  height: calc((.5rem + 3rem + var(--margin-size) * 2) * 5 + 5rem);
+  height: calc((.5rem + 3rem + var(--margin-size) * 2) * 5 + 12rem);
   max-height: 80vh;
   overflow: visible;
   row-gap: .5rem;
@@ -86,6 +86,7 @@
     align-items: start;
     align-content: start;
     row-gap: .5rem;
+    overflow: auto;
     flex: 1;
 
     .exportStoreEntry {
@@ -128,13 +129,24 @@
 }
 
 .templateDetails {
-  width: 20rem;
-  top: 0px;
-  bottom: 0px;
+  margin: var(--margin-size);
+
+  table {
+
+    th,
+    td {
+      padding: 4px;
+      border: 1px solid var(--text-l);
+    }
+  }
 
   .description {
     margin-left: 1rem;
     font-size: .9rem;
+  }
+
+  p {
+    text-indent: 1rem;
   }
 
   .buttons {

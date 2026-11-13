@@ -148,6 +148,7 @@ interface ListOptionsT {
   count: number;
   offset: number;
   sortBy: SortOptions;
+  search: string;
 }
 
 function defaultFileDatabaseList(): fileDatabaseListT {
@@ -237,32 +238,24 @@ function sendFile(e: React.ChangeEvent<HTMLInputElement>, fileInfo: (fileDatabas
   });
 }
 
-const sendFileInput = (text: string, data: (fileDatabaseDataT | undefined), postExecute: (resp: Response) => void) => (
+const SendFileInput = (text: string, data: (fileDatabaseDataT | undefined), postExecute: (resp: Response) => void) => (
   <button onClick={e => { const target = e.target as HTMLButtonElement; target.firstChild instanceof HTMLInputElement ? target.firstChild.click() : undefined; }}>
     <input hidden accept=".hbs" type="file" onChange={(e) => sendFile(e, data)?.then(resp => postExecute(resp))}></input>
     {text}
   </button>
 )
 
-function detailsRequest(id: number): Promise<any> {
-  // Check local storage first before making the request
-  // Determine if the file has already been downloaded
-  const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-  const index = templates.findIndex(t => t.data.id === id);
-  if (index < 0) {
-    const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
-    // Expects a json of fileDatabaseDataT
-    return fetch(`/api/files/${id}`, {
-      headers: {
-        "Authorization": `Bearer ${keyInput.value}`
-      }
-    })
-      .then(resp => resp.json());
-  } else {
-    return new Promise((resolve) => {
-      resolve(templates[index].data);
-    })
-  }
+async function detailsRequest(id: number): Promise<any> {
+  const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+
+  const resp = await fetch(`/api/files/${id}`, {
+    headers: {
+      "Authorization": `Bearer ${keyInput.value}`
+    }
+  })
+
+  // Expects a json of fileDatabaseDataT
+  return resp.json();
 }
 
 function likeRequest(id: number): Promise<Response> {
@@ -278,10 +271,9 @@ function likeRequest(id: number): Promise<Response> {
 async function getListRequest(options: ListOptionsT): Promise<any> {
   // TODO: Limit request rate
   const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
-  const owned = (document.getElementById('showOwned') as HTMLInputElement)?.checked ?? false
-  const sortBy = (document.getElementById('sortBy') as HTMLInputElement)?.value ?? "likes"
+  const search = encodeURIComponent(options.search)
 
-  const resp = await fetch(`/api/files?offset=${options.offset}&count=${options.count}&ownedOnly=${owned}&sort=${sortBy}`, {
+  const resp = await fetch(`/api/files?offset=${options.offset}&count=${options.count}&ownedOnly=${options.ownedOnly}&sort=${options.sortBy}&search=${search}`, {
     headers: {
       "Authorization": `Bearer ${keyInput.value}`
     }
@@ -292,11 +284,11 @@ async function getListRequest(options: ListOptionsT): Promise<any> {
 
 interface TemplateDetailsProps {
   closeDetails: () => void;
-  setTemplate: (argv: string) => void, templateId: number;
-  ref: RefObject<(null | HTMLDialogElement)>;
+  setTemplate: (argv: string) => void;
+  templateId: number;
 }
 
-function TemplateDetails({ closeDetails, setTemplate, templateId, ref }: TemplateDetailsProps): ReactNode {
+function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDetailsProps): ReactNode {
   const [isPending, startTransition] = useTransition();
   const [data, setData] = useState(undefined as (fileDatabaseDataT | undefined));
 
@@ -305,61 +297,65 @@ function TemplateDetails({ closeDetails, setTemplate, templateId, ref }: Templat
       setData(defaultDatabaseData);
       return;
     }
-    if (!isDownloaded(templateId))
-      startTransition(async () => {
-        const d = await detailsRequest(templateId);
-        setData(createDatabaseData(d));
-      })
-    else {
-      const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-      const index = templates.findIndex(t => t.data.id === templateId);
-      setData(templates[index].data);
-    }
-  }, [templateId]);
+    // TODO: OPTIMIZATION: store data received so requests can be reduced
+    startTransition(async () => {
+      const d = await detailsRequest(templateId);
+      setData(createDatabaseData(d));
+    })
+  }, []);
 
   return (
-    <dialog
-      ref={ref}
-      className="templateDetails"
-      closedby='any'
-      onCancel={closeDetails}>
-      {templateId > 0 && isPending && <div>Loading...</div>}
-      {templateId > 0 && !isPending && data &&
-        <>
-          <h3>{data.properties.name}</h3>
-          {data.properties.description !== "" && <p className='description'>{data.properties.description}</p>}
-          {data.dateCreated > 0 && <p>Last Updated: {dayjs(data.dateCreated).format("MM/DD/YYYY HH:MM:ss")}</p>}
-          {data.version >= 0 && <p>Version: {data.version}</p>}
-          {data.properties.inputs && data.properties.inputs.length > 0 &&
-            <div>
-              <h4>Inputs</h4>
-              {data.properties.inputs.map(v => {
-                return (<>
-                  <p style={{ paddingLeft: "1rem" }}>{v.label}: {v.type} {v.options && v.options.join(", ")}</p>
-                </>)
-              })}
+    <Subregion className='templateDetails'>
+      <div>
+        {templateId > 0 && isPending && <div>Loading...</div>}
+        {templateId > 0 && !isPending && data &&
+          <>
+            <h3>{data.properties.name}</h3>
+            {data.properties.description !== "" && <p className='description'>{data.properties.description}</p>}
+            {data.dateCreated > 0 && <><h4>Last Updated:</h4><p>{dayjs(data.dateCreated).format("MM/DD/YYYY HH:MM:ss")}</p></>}
+            {data.version >= 0 && <><h4>Version:</h4><p> {data.version}</p></>}
+            {data.properties.inputs && data.properties.inputs.length > 0 &&
+              <div>
+                <h4>Inputs</h4>
+                <table>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Options</th>
+                  </tr>
+                  {data.properties.inputs.map(v => {
+                    return (
+                      <tr>
+                        <td>{v.label}</td>
+                        <td>{v.type}</td>
+                        <td>{v.options && v.options.join(", ")}</td>
+                      </tr>
+                    )
+                  })}
+                </table>
+              </div>
+            }
+            {data.properties.limits && data.properties.limits.length > 0 &&
+              <div>
+                <h4>Limits</h4>
+                {data.properties.limits.map(v => <p>{v}</p>)}
+              </div>
+            }
+            {data.properties.regions && data.properties.regions.length > 0 &&
+              <div>
+                <h4>Regions</h4>
+                {data.properties.regions.map(v => <p>{v}</p>)}
+              </div>
+            }
+            <div className='buttons'>
+              {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
+              <button onClick={() => { addFile(setTemplate, data); closeDetails(); }}>Get</button>
+              <button onClick={() => { likeRequest(templateId); }}>Like</button>
             </div>
-          }
-          {data.properties.limits && data.properties.limits.length > 0 &&
-            <div>
-              <h4>Limits</h4>
-              {data.properties.limits.map(v => <p style={{ paddingLeft: "1rem" }}>{v}</p>)}
-            </div>
-          }
-          {data.properties.regions && data.properties.regions.length > 0 &&
-            <div>
-              <h4>Regions</h4>
-              {data.properties.regions.map(v => <p style={{ paddingLeft: "1rem" }}>{v}</p>)}
-            </div>
-          }
-          <div className='buttons'>
-            {data.owned && sendFileInput("Upload New Version", data, closeDetails)}
-            <button onClick={() => { addFile(setTemplate, data); closeDetails(); }}>Get</button>
-            <button onClick={() => { likeRequest(templateId); }}>Like</button>
-          </div>
-        </>
-      }
-    </dialog>
+          </>
+        }
+      </div>
+    </Subregion>
   )
 }
 
@@ -367,16 +363,17 @@ interface templateBrowserProps {
   setTemplate: (argv: string) => void;
 }
 
-function isDownloaded(id: number): boolean {
-  const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
-  const found = templates.some(t => t.data.id === id);
-  return found;
-}
+// function isDownloaded(id: number): boolean {
+//   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
+//   const found = templates.some(t => t.data.id === id);
+//   return found;
+// }
 
 // State
 // -1: not downloaded
 // >=0: version
-function newestVersion(uuid: string): number {
+// Returns the newest version of a file saved locally
+function newestSavedVersion(uuid: string): number {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
   const found = templates.some(t => t.data.uuid === uuid);
   if (!found) return -1;
@@ -385,12 +382,12 @@ function newestVersion(uuid: string): number {
 }
 
 function TemplateBrowser({ setTemplate }: templateBrowserProps) {
-  const dialogRef: RefObject<null | HTMLDialogElement> = useRef(null);
   const isMounted = useRef(false);
   const [isPending, startTransition] = useTransition()
   const [databaseData, setDatabaseData] = useState(defaultFileDatabaseList());
   const [offset, setOffset] = useState(0);
   const [showDetails, setShowDetails] = useState(-1)
+  const [showSearch, setShowSearch] = useState(false)
 
   const totalPages = databaseData.pageSize != 0 ? Math.floor(databaseData.maxOffset / databaseData.pageSize) + 1 : 1;
   function nextPage() {
@@ -408,7 +405,10 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   function getListData() {
     startTransition(async () => {
       try {
-        const options: ListOptionsT = { offset: offset, count: 5, ownedOnly: false, sortBy: "downloads" }
+        const owned = (document.getElementById('showOwned') as HTMLInputElement)?.checked ?? false
+        const sortBy = (document.getElementById('sortBy') as HTMLInputElement)?.value as SortOptions ?? "likes" as SortOptions
+        const search = (document.getElementById('searchTemplates') as HTMLInputElement)?.value ?? ""
+        const options: ListOptionsT = { offset: offset, count: 5, ownedOnly: owned, sortBy: sortBy, search: search }
         const d: fileDatabaseListT = await getListRequest(options);
         setDatabaseData(d);
       } catch (err) {
@@ -424,14 +424,10 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
 
   function handleDetails(id: number) {
     setShowDetails(id);
-    if (id >= 0)
-      dialogRef.current?.showModal();
-    else
-      dialogRef.current?.close();
   }
 
   const blocks = databaseData.data ? databaseData.data.map(v => {
-    const foundVersion = newestVersion(v.uuid);
+    const foundVersion = newestSavedVersion(v.uuid);
     const downloaded = foundVersion > 0;
     const newest = foundVersion === v.version;
     return (
@@ -451,25 +447,36 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   }) : <></>;
 
   const sortOptions = ["likes", "downloads", "age"].map(v => <option key={v} value={v}>{v}</option>)
+  const showInfo = showDetails > 0;
   // TODO: Cache a few template details to reduce requests
   return (
     <>
       <dialog
         id='templateDownload'
+        onCancel={() => handleDetails(-1)}
         closedby='any'>
         <div id='templateDownloadDialog'>
+          <h2 style={{ textAlign: 'center' }}>Template Browser</h2>
           <div id='templateDownloadDialogTop'>
-            {sendFileInput("Upload", undefined, () => { getListData() })}
-            <div>
-              <label htmlFor='showOwned'>Show Owned</label>
-              <input type='checkbox' id='showOwned' onChange={getListData} />
-            </div>
-            <select id="sortBy" onChange={getListData}>{sortOptions}</select>
-            <button onClick={getListData}>Refresh</button>
+            {showInfo && <button onClick={() => handleDetails(-1)}>Back</button>}
+            {
+              !showInfo && <>
+                {SendFileInput("Upload", undefined, () => { getListData() })}
+                <div>
+                  <label htmlFor='showOwned'>Show Owned</label>
+                  <input type='checkbox' id='showOwned' onChange={getListData} />
+                </div>
+                <select id="sortBy" onChange={getListData}>{sortOptions}</select>
+                <button onClick={() => setShowSearch(true)}>S</button>
+                <button onClick={getListData}>Refresh</button>
+              </>
+            }
           </div>
+          {!showInfo && showSearch && <input type='text' id='searchTemplates' placeholder='Search Name' onKeyDown={e => { if (e.key === 'Enter') getListData() }} onBlur={e => { if (e.target.value == "") setShowSearch(false) }} />}
           <div id='templateDownloadDialogMiddle'>
-            {isPending && <h3>Loading data...</h3>}
-            {!isPending && blocks}
+            {!showInfo && isPending && <h3>Loading data...</h3>}
+            {!showInfo && !isPending && blocks}
+            {showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails(-1)} templateId={showDetails} />}
           </div>
           <div id='templateDownloadDialogBottom'>
             <div>
@@ -477,11 +484,10 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
               <span>{offset / databaseData.pageSize + 1} / {totalPages}</span>
               <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}>-&gt;</button>
             </div>
-            <input style={{ width: "23rem" }} type='text' id='apiKeyInput' placeholder='Enter API Key' />
+            <input style={{ width: "23rem" }} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={getListData} />
           </div>
         </div>
       </dialog>
-      <TemplateDetails ref={dialogRef} closeDetails={() => handleDetails(-1)} templateId={showDetails} setTemplate={setTemplate} />
     </>
   )
 }
