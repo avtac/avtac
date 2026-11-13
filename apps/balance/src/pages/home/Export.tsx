@@ -141,6 +141,15 @@ interface fileDatabaseListT {
   pageSize: number;
 }
 
+type SortOptions = ("likes" | "downloads" | "age")
+
+interface ListOptionsT {
+  ownedOnly: boolean;
+  count: number;
+  offset: number;
+  sortBy: SortOptions;
+}
+
 function defaultFileDatabaseList(): fileDatabaseListT {
   return { data: [], maxOffset: 0, pageSize: 0 }
 }
@@ -153,6 +162,7 @@ interface fileDatabaseDataT {
   downloads: number;
   likes: number;
   dateCreated: number;
+  owned: boolean;
   properties: templatePropertiesT;
 }
 
@@ -164,6 +174,7 @@ const defaultDatabaseData: fileDatabaseDataT = {
   downloads: -1,
   likes: -1,
   dateCreated: -1,
+  owned: false,
   properties: defaultProperties,
 }
 
@@ -176,7 +187,12 @@ function createDatabaseData(options?: Partial<fileDatabaseDataT>): fileDatabaseD
 
 async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDatabaseDataT) {
   function downloadRequest(id: number): Promise<string> {
-    return fetch(`http://10.0.1.140/api/files/${id}/content`).then(resp => resp.text())
+    const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+    return fetch(`/api/files/${id}/content`, {
+      headers: {
+        "Authorization": `Bearer ${keyInput.value}`
+      }
+    }).then(resp => resp.text())
   }
 
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
@@ -189,7 +205,9 @@ async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDataba
     let newTemplate: templateT = extractVariables(fileString);
     newTemplate.data = fileInfo;
     if (newTemplate.data.name == "") return;
-    newTemplate.id = crypto.randomUUID(); // Client unique id for every template
+    if (crypto.randomUUID)
+      newTemplate.id = crypto.randomUUID(); // Client unique id for every template
+    else newTemplate.id = String(Math.round(Math.random() * 1e12));
 
     templates.push(newTemplate);
     setTemplate(newTemplate.id);
@@ -201,16 +219,46 @@ async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDataba
   }
 }
 
+function sendFile(e: React.ChangeEvent<HTMLInputElement>, fileInfo: (fileDatabaseDataT | undefined)) {
+  if (!e.target.files || e.target.files.length == 0) return;
+  const file = e.target.files[0];
+  const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+
+  const formData: FormData = new FormData();
+  formData.append("file", file);
+  formData.append("uuid", fileInfo?.uuid ?? "");
+
+  return fetch(`/api/files`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${keyInput?.value ?? ""}`
+    },
+    body: formData
+  });
+}
+
+const sendFileInput = (text: string, data: (fileDatabaseDataT | undefined), postExecute: (resp: Response) => void) => (
+  <button onClick={e => { const target = e.target as HTMLButtonElement; target.firstChild instanceof HTMLInputElement ? target.firstChild.click() : undefined; }}>
+    <input hidden accept=".hbs" type="file" onChange={(e) => sendFile(e, data)?.then(resp => postExecute(resp))}></input>
+    {text}
+  </button>
+)
+
 function detailsRequest(id: number): Promise<any> {
   // Check local storage first before making the request
   // Determine if the file has already been downloaded
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
   const index = templates.findIndex(t => t.data.id === id);
-  if (index < 0)
+  if (index < 0) {
+    const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
     // Expects a json of fileDatabaseDataT
-    return fetch(`http://10.0.1.140/api/files/${id}`)
+    return fetch(`/api/files/${id}`, {
+      headers: {
+        "Authorization": `Bearer ${keyInput.value}`
+      }
+    })
       .then(resp => resp.json());
-  else {
+  } else {
     return new Promise((resolve) => {
       resolve(templates[index].data);
     })
@@ -218,14 +266,26 @@ function detailsRequest(id: number): Promise<any> {
 }
 
 function likeRequest(id: number): Promise<Response> {
-  return fetch(`http://10.0.1.140/api/files/${id}/like`, {
+  const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+  return fetch(`/api/files/${id}/like`, {
+    headers: {
+      "Authorization": `Bearer ${keyInput.value}`
+    },
     method: 'PATCH'
   })
 }
 
-async function getListRequest(offset: number): Promise<any> {
+async function getListRequest(options: ListOptionsT): Promise<any> {
   // TODO: Limit request rate
-  const resp = await fetch(`http://10.0.1.140/api/files?offset=${offset}&count=5`);
+  const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+  const owned = (document.getElementById('showOwned') as HTMLInputElement)?.checked ?? false
+  const sortBy = (document.getElementById('sortBy') as HTMLInputElement)?.value ?? "likes"
+
+  const resp = await fetch(`/api/files?offset=${options.offset}&count=${options.count}&ownedOnly=${owned}&sort=${sortBy}`, {
+    headers: {
+      "Authorization": `Bearer ${keyInput.value}`
+    }
+  });
   const json = await resp.json();
   return json;
 }
@@ -293,6 +353,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateId, ref }: Templat
             </div>
           }
           <div className='buttons'>
+            {data.owned && sendFileInput("Upload New Version", data, closeDetails)}
             <button onClick={() => { addFile(setTemplate, data); closeDetails(); }}>Get</button>
             <button onClick={() => { likeRequest(templateId); }}>Like</button>
           </div>
@@ -347,7 +408,8 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   function getListData() {
     startTransition(async () => {
       try {
-        const d: fileDatabaseListT = await getListRequest(offset);
+        const options: ListOptionsT = { offset: offset, count: 5, ownedOnly: false, sortBy: "downloads" }
+        const d: fileDatabaseListT = await getListRequest(options);
         setDatabaseData(d);
       } catch (err) {
         setDatabaseData({ maxOffset: databaseData.maxOffset, pageSize: databaseData.pageSize, data: [] });
@@ -375,7 +437,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
     return (
       <Subregion className={'exportStoreEntry' + (downloaded ? ' downloaded' : '')} onClick={() => handleDetails(v.id)} >
         <div>
-          <h5>Name{downloaded && ": Saved"}{downloaded && !newest && " v" + foundVersion}</h5>
+          <h5>Name{downloaded && ": Saved"}{downloaded && !newest && " v" + foundVersion}{v.owned && " Owner"}</h5>
           <p>{v.name} v{v.version}</p>
         </div>
         <div className='counts'>
@@ -388,6 +450,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
     )
   }) : <></>;
 
+  const sortOptions = ["likes", "downloads", "age"].map(v => <option key={v} value={v}>{v}</option>)
   // TODO: Cache a few template details to reduce requests
   return (
     <>
@@ -396,6 +459,12 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         closedby='any'>
         <div id='templateDownloadDialog'>
           <div id='templateDownloadDialogTop'>
+            {sendFileInput("Upload", undefined, () => { getListData() })}
+            <div>
+              <label htmlFor='showOwned'>Show Owned</label>
+              <input type='checkbox' id='showOwned' onChange={getListData} />
+            </div>
+            <select id="sortBy" onChange={getListData}>{sortOptions}</select>
             <button onClick={getListData}>Refresh</button>
           </div>
           <div id='templateDownloadDialogMiddle'>
@@ -403,9 +472,12 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
             {!isPending && blocks}
           </div>
           <div id='templateDownloadDialogBottom'>
-            <button disabled={offset === 0} onClick={prevPage}>&lt;-</button>
-            <span>{offset / databaseData.pageSize + 1} / {totalPages}</span>
-            <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}>-&gt;</button>
+            <div>
+              <button disabled={offset === 0} onClick={prevPage}>&lt;-</button>
+              <span>{offset / databaseData.pageSize + 1} / {totalPages}</span>
+              <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}>-&gt;</button>
+            </div>
+            <input style={{ width: "23rem" }} type='text' id='apiKeyInput' placeholder='Enter API Key' />
           </div>
         </div>
       </dialog>

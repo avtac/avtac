@@ -68,7 +68,7 @@
 #templateDownloadDialog {
   display: flex;
   flex-direction: column;
-  width: 30rem;
+  min-width: 34rem;
   max-width: 80vw;
   height: calc((.5rem + 3rem + var(--margin-size) * 2) * 5 + 5rem);
   max-height: 80vh;
@@ -76,7 +76,9 @@
   row-gap: .5rem;
 
   #templateDownloadDialogTop {
-    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   #templateDownloadDialogMiddle {
