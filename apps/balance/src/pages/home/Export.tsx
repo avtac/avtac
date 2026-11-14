@@ -300,6 +300,15 @@ async function getListRequest(options: ListOptionsT): Promise<any> {
   return json;
 }
 
+function downloadFile(fileId: number, filename: string) {
+  const link = document.createElement('a');
+  link.href = `${baseURL}/api/files/${fileId}/content`;
+  link.download = filename; // Specifies the saved filename
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link); // Cleanup
+}
+
 interface TemplateDetailsProps {
   closeDetails: () => void;
   setTemplate: (argv: string) => void;
@@ -372,6 +381,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
             }
             <div className='buttons'>
               {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
+              <button onClick={() => { downloadFile(templateId, data.name + ".hbs") }}>Download</button>
               <button onClick={() => { addFile(setTemplate, data); closeDetails(); }}>Get</button>
               <button onClick={() => { likeRequest(templateId); }}>Like</button>
             </div>
