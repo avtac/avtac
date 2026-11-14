@@ -439,9 +439,10 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
     startTransition(async () => {
       try {
         const owned = (document.getElementById('showOwned') as HTMLInputElement)?.checked ?? false
+        const sortDir = (document.getElementById('sortDirectionCheckbox') as HTMLInputElement)?.checked ?? false
         const sortBy = (document.getElementById('sortBy') as HTMLInputElement)?.value as SortOptions ?? "likes" as SortOptions
         const search = (document.getElementById('searchTemplates') as HTMLInputElement)?.value ?? ""
-        const options: ListOptionsT = { offset: offset, count: 5, ownedOnly: owned, sortBy: sortBy, search: search }
+        const options: ListOptionsT = { offset: offset, count: 5, ownedOnly: owned, sortBy: sortBy, search: search, sortDir: sortDir ? "a" : "d" }
         const d: fileDatabaseListT = await getListRequest(options);
         setDatabaseData(d);
       } catch (err) {
@@ -485,6 +486,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
 
   const sortOptions = ["likes", "downloads", "age"].map(v => <option key={v} value={v}>{v}</option>)
   const showInfo = showDetails > 0;
+  const sortDir = ((document.getElementById("sortDirectionCheckbox") as HTMLInputElement)?.checked ?? true) ? "\u2191" : "\u2193";
   // TODO: Cache a few template details to reduce requests
   return (
     <>
@@ -505,7 +507,11 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
                   <input type='checkbox' id='showOwned' onChange={getListData} />
                 </div>
                 <select id="sortBy" onChange={getListData}>{sortOptions}</select>
-                <button onClick={() => setShowSearch(true)}>S</button>
+                <div>
+                  <button onClick={() => { (document.getElementById("sortDirectionCheckbox") as HTMLInputElement).click() }}>{sortDir}</button>
+                  <input hidden type='checkbox' id='sortDirectionCheckbox' onChange={getListData} />
+                </div>
+                <button onClick={() => setShowSearch(!showSearch)}>S</button>
                 <button onClick={getListData}>Refresh</button>
               </>
             }
