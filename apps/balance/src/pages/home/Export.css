@@ -79,6 +79,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    select {
+      width: 7rem;
+    }
   }
 
   #templateDownloadDialogMiddle {
@@ -113,7 +117,7 @@
 
   #templateDownloadDialogBottom {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     gap: .5rem;
   }
@@ -132,6 +136,7 @@
   margin: var(--margin-size);
 
   table {
+    margin-left: 1rem;
 
     th,
     td {
@@ -146,7 +151,8 @@
   }
 
   p {
-    text-indent: 1rem;
+    margin-left: 1rem;
+    text-wrap: wrap;
   }
 
   .buttons {

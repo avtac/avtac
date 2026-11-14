@@ -148,11 +148,12 @@ interface ListOptionsT {
   count: number;
   offset: number;
   sortBy: SortOptions;
+  sortDir: ("a" | "d");
   search: string;
 }
 
 function defaultFileDatabaseList(): fileDatabaseListT {
-  return { data: [], maxOffset: 0, pageSize: 0 }
+  return { data: [], maxOffset: 0, pageSize: 5 }
 }
 
 interface fileDatabaseDataT {
@@ -164,6 +165,7 @@ interface fileDatabaseDataT {
   likes: number;
   dateCreated: number;
   owned: boolean;
+  contentHash: string;
   properties: templatePropertiesT;
 }
 
@@ -176,6 +178,7 @@ const defaultDatabaseData: fileDatabaseDataT = {
   likes: -1,
   dateCreated: -1,
   owned: false,
+  contentHash: "",
   properties: defaultProperties,
 }
 
@@ -186,23 +189,36 @@ function createDatabaseData(options?: Partial<fileDatabaseDataT>): fileDatabaseD
   };
 }
 
-async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDatabaseDataT) {
-  function downloadRequest(id: number): Promise<string> {
-    const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
-    return fetch(`/api/files/${id}/content`, {
-      headers: {
-        "Authorization": `Bearer ${keyInput.value}`
-      }
-    }).then(resp => resp.text())
-  }
+async function sha256(text: string) {
+  const msgBuffer = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
+async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDatabaseDataT) {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
 
   // Determine if the file has already been downloaded
   const index = templates.findIndex(t => t.data.id === fileInfo.id);
   if (index < 0) {
-    const fileString = await downloadRequest(fileInfo.id)
+    const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+    const resp = await fetch(`${baseURL}/api/files/${fileInfo.id}/content`, {
+      headers: {
+        "Authorization": `Bearer ${keyInput.value}`
+      }
+    })
+    const fileString = await resp.text()
 
+    // Confirm the sent hash matches the content hash
+    // Crypto is only available in https environments
+    if (crypto.subtle) {
+      const sentHash = resp.headers.get("Content-SHA256");
+      const contentHash = await sha256(fileString);
+      // TODO: Actually do something if this fails
+      if (contentHash != sentHash)
+        console.warn("File content does not match hash");
+    }
     let newTemplate: templateT = extractVariables(fileString);
     newTemplate.data = fileInfo;
     if (newTemplate.data.name == "") return;
@@ -273,7 +289,7 @@ async function getListRequest(options: ListOptionsT): Promise<any> {
   const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
   const search = encodeURIComponent(options.search)
 
-  const resp = await fetch(`/api/files?offset=${options.offset}&count=${options.count}&ownedOnly=${options.ownedOnly}&sort=${options.sortBy}&search=${search}`, {
+  const resp = await fetch(`${baseURL}/api/files?offset=${options.offset}&count=${options.count}&ownedOnly=${options.ownedOnly}&sort=${options.sortBy}&sortDir=${options.sortDir}&search=${search}`, {
     headers: {
       "Authorization": `Bearer ${keyInput.value}`
     }
@@ -314,6 +330,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
             {data.properties.description !== "" && <p className='description'>{data.properties.description}</p>}
             {data.dateCreated > 0 && <><h4>Last Updated:</h4><p>{dayjs(data.dateCreated).format("MM/DD/YYYY HH:MM:ss")}</p></>}
             {data.version >= 0 && <><h4>Version:</h4><p> {data.version}</p></>}
+            {data.contentHash != "" && <><h4>SHA256:</h4><p style={{ wordBreak: "break-all" }}> {data.contentHash}</p></>}
             {data.properties.inputs && data.properties.inputs.length > 0 &&
               <div>
                 <h4>Inputs</h4>
@@ -424,6 +441,10 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
 
   function handleDetails(id: number) {
     setShowDetails(id);
+    // Refresh when returning to main list
+    if (id == -1) {
+      getListData();
+    }
   }
 
   const blocks = databaseData.data ? databaseData.data.map(v => {
