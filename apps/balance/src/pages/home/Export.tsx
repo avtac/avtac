@@ -13,6 +13,8 @@ import Diagram from '../../Diagram';
 import { Subregion } from '@avtac/ui/Layout';
 import dayjs from 'dayjs';
 
+const baseURL = ''
+
 declare module 'react' {
   interface ButtonHTMLAttributes<T> extends HTMLAttributes<T> {
     command?: 'toggle-popover' | 'show-popover' | 'hide-popover' | 'show-modal' | 'close' | 'request-close' | (string & {});
@@ -245,7 +247,7 @@ function sendFile(e: React.ChangeEvent<HTMLInputElement>, fileInfo: (fileDatabas
   formData.append("file", file);
   formData.append("uuid", fileInfo?.uuid ?? "");
 
-  return fetch(`/api/files`, {
+  return fetch(`${baseURL}/api/files`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${keyInput?.value ?? ""}`
@@ -264,7 +266,7 @@ const SendFileInput = (text: string, data: (fileDatabaseDataT | undefined), post
 async function detailsRequest(id: number): Promise<any> {
   const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
 
-  const resp = await fetch(`/api/files/${id}`, {
+  const resp = await fetch(`${baseURL}/api/files/${id}`, {
     headers: {
       "Authorization": `Bearer ${keyInput.value}`
     }
@@ -276,7 +278,7 @@ async function detailsRequest(id: number): Promise<any> {
 
 function likeRequest(id: number): Promise<Response> {
   const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
-  return fetch(`/api/files/${id}/like`, {
+  return fetch(`${baseURL}/api/files/${id}/like`, {
     headers: {
       "Authorization": `Bearer ${keyInput.value}`
     },
@@ -335,33 +337,37 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
               <div>
                 <h4>Inputs</h4>
                 <table>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Options</th>
-                  </tr>
-                  {data.properties.inputs.map(v => {
-                    return (
-                      <tr>
-                        <td>{v.label}</td>
-                        <td>{v.type}</td>
-                        <td>{v.options && v.options.join(", ")}</td>
-                      </tr>
-                    )
-                  })}
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Options</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.properties.inputs.map(v => {
+                      return (
+                        <tr key={v.name}>
+                          <td>{v.label}</td>
+                          <td>{v.type}</td>
+                          <td>{v.options && v.options.join(", ")}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
                 </table>
               </div>
             }
             {data.properties.limits && data.properties.limits.length > 0 &&
               <div>
                 <h4>Limits</h4>
-                {data.properties.limits.map(v => <p>{v}</p>)}
+                {data.properties.limits.map(v => <p key={v}>{v}</p>)}
               </div>
             }
             {data.properties.regions && data.properties.regions.length > 0 &&
               <div>
                 <h4>Regions</h4>
-                {data.properties.regions.map(v => <p>{v}</p>)}
+                {data.properties.regions.map(v => <p key={v}>{v}</p>)}
               </div>
             }
             <div className='buttons'>
@@ -406,7 +412,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   const [showDetails, setShowDetails] = useState(-1)
   const [showSearch, setShowSearch] = useState(false)
 
-  const totalPages = databaseData.pageSize != 0 ? Math.floor(databaseData.maxOffset / databaseData.pageSize) + 1 : 1;
+  const totalPages = databaseData.pageSize != 0 ? Math.floor((databaseData.maxOffset - 1) / databaseData.pageSize) + 1 : 1;
   function nextPage() {
     const newOffset = Math.min(offset + databaseData.pageSize, Math.max((totalPages - 1) * databaseData.pageSize, 0));
     if (newOffset === offset) return;
@@ -452,10 +458,10 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
     const downloaded = foundVersion > 0;
     const newest = foundVersion === v.version;
     return (
-      <Subregion className={'exportStoreEntry' + (downloaded ? ' downloaded' : '')} onClick={() => handleDetails(v.id)} >
+      <Subregion key={v.uuid} className={'exportStoreEntry' + (downloaded ? ' downloaded' : '')} onClick={() => handleDetails(v.id)} >
         <div>
           <h5>Name{downloaded && ": Saved"}{downloaded && !newest && " v" + foundVersion}{v.owned && " Owner"}</h5>
-          <p>{v.name} v{v.version}</p>
+          <p>{v.name}{downloaded && !newest && " v" + v.version}</p>
         </div>
         <div className='counts'>
           <h5>Downloads</h5>
@@ -478,6 +484,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         closedby='any'>
         <div id='templateDownloadDialog'>
           <h2 style={{ textAlign: 'center' }}>Template Browser</h2>
+          <button command='close' commandfor='templateDownload' style={{ position: "absolute", top: "5px", right: "5px", }}>Close</button>
           <div id='templateDownloadDialogTop'>
             {showInfo && <button onClick={() => handleDetails(-1)}>Back</button>}
             {
@@ -500,12 +507,15 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
             {showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails(-1)} templateId={showDetails} />}
           </div>
           <div id='templateDownloadDialogBottom'>
-            <div>
-              <button disabled={offset === 0} onClick={prevPage}>&lt;-</button>
-              <span>{offset / databaseData.pageSize + 1} / {totalPages}</span>
-              <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}>-&gt;</button>
-            </div>
             <input style={{ width: "23rem" }} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={getListData} />
+            {!showInfo &&
+              <>
+                <div>
+                  <button disabled={offset === 0} onClick={prevPage}>&lt;-</button>
+                  <span>{databaseData.pageSize != 0 ? Math.floor(offset / databaseData.pageSize) + 1 : 0} / {totalPages}</span>
+                  <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}>-&gt;</button>
+                </div>
+              </>}
           </div>
         </div>
       </dialog>
@@ -561,6 +571,7 @@ function ExportHeader({ setTemplate, activeTemplate }: { setTemplate: (arg: stri
       };
     };
     input.click();
+    input.remove();
   }
 
   const deleteButton = () => {
