@@ -259,9 +259,9 @@ function sendFile(e: React.ChangeEvent<HTMLInputElement>, fileInfo: (fileDatabas
 }
 
 const SendFileInput = (text: string, data: (fileDatabaseDataT | undefined), postExecute: (resp: Response) => void) => (
-  <button onClick={e => { const target = e.target as HTMLButtonElement; target.firstChild instanceof HTMLInputElement ? target.firstChild.click() : undefined; }}>
+  <button title={text} onClick={e => { const target = e.currentTarget as HTMLButtonElement; target.firstChild instanceof HTMLInputElement ? target.firstChild.click() : undefined; }}>
     <input hidden accept=".hbs" type="file" onChange={(e) => sendFile(e, data)?.then(resp => postExecute(resp))}></input>
-    {text}
+    <i className='fa-solid fa-file-arrow-up'></i>
   </button>
 )
 
@@ -407,11 +407,12 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
   const showTags = ((data?.tags && data.tags.length > 0) || data?.owned) ?? false
   return (
     <Subregion className='templateDetails'>
-      <div>
-        {templateId > 0 && !data && isPending && <div>Loading...</div>}
-        {templateId > 0 && data &&
-          <>
-            <h3>{data.properties.name}</h3>
+      {templateId > 0 && !data && isPending && <p className={'spinning'}><i className="fa-solid fa-arrows-rotate"></i></p>}
+      {templateId > 0 && data &&
+        <>
+          <div>
+            <h3>{data.properties.name}{data.version >= 0 && " v" + data.version}</h3>
+
             {showTags && <div className='tagHolder'>
               {data.tags && data.tags.sort((a, b) => a.localeCompare(b)).map(t => tag(t))}
               {data.owned && !addingTag && <button className='templateTag fa-solid fa-plus' onClick={() => setAddingTag(true)}></button>}
@@ -424,9 +425,8 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
                   onBlur={e => submitInput(e.target as HTMLInputElement)}
                 />}
             </div>}
+            {data.dateCreated > 0 && <><p>Last Updated: {dayjs(data.dateCreated).format('MM/DD/YYYY')}</p></>}
             {data.properties.description !== "" && <p className='description'>{data.properties.description}</p>}
-            {data.dateCreated > 0 && <><h4>Last Updated:</h4><p>{dayjs(data.dateCreated).format("MM/DD/YYYY HH:MM:ss")}</p></>}
-            {data.version >= 0 && <><h4>Version:</h4><p> {data.version}</p></>}
             {data.properties.inputs && data.properties.inputs.length > 0 &&
               <div>
                 <h4>Inputs</h4>
@@ -465,15 +465,15 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
               </div>
             }
             {data.contentHash != "" && <details><summary><h4>SHA256</h4></summary><p style={{ wordBreak: "break-all" }}> {data.contentHash}</p></details>}
-            <div className='buttons'>
-              {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
-              <button onClick={() => { downloadFile(templateId, data.name + ".hbs") }}>Download</button>
-              <button onClick={() => { addFile(setTemplate, data); closeDetails(); }}>Get</button>
-              <button onClick={() => { likeRequest(templateId); }}>Like</button>
-            </div>
-          </>
-        }
-      </div>
+          </div>
+          <div className='buttons'>
+            {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
+            <button title="Download File" onClick={() => { downloadFile(templateId, data.name + ".hbs") }}><i className="fa-solid fa-file-arrow-down"></i></button>
+            <button title="Get File" onClick={() => { addFile(setTemplate, data); closeDetails(); }}><i className="fa-solid fa-plus"></i></button>
+            <button title="Like" onClick={() => { likeRequest(templateId); }}><i className="fa-solid fa-thumbs-up"></i></button>
+          </div>
+        </>
+      }
     </Subregion>
   )
 }
@@ -501,6 +501,7 @@ function newestSavedVersion(uuid: string): number {
 }
 
 function TemplateBrowser({ setTemplate }: templateBrowserProps) {
+  const ownedRef: RefObject<(null | HTMLInputElement)> = useRef(null);
   const isMounted = useRef(false);
   const [isPending, startTransition] = useTransition()
   const [databaseData, setDatabaseData] = useState(defaultFileDatabaseList());
@@ -563,27 +564,27 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
     const downloaded = foundVersion > 0;
     const newest = foundVersion === v.version;
     return (
-      <Subregion key={v.uuid} className={'exportStoreEntry' + (downloaded ? ' downloaded' : '')} onClick={() => handleDetails(v.id)} >
+      <Subregion key={v.uuid} className={'exportStoreEntry'} onClick={() => handleDetails(v.id)} >
         <div>
-          <h5>Name{downloaded && ": Saved"}{downloaded && !newest && " v" + foundVersion}{v.owned && " Owner"}</h5>
+          <h5>Name{downloaded && <span className="savedTag">Saved</span>}{downloaded && !newest && " v" + foundVersion}{v.owned && <span className="ownerTag">Owner</span>}</h5>
           <p>{v.name}{downloaded && !newest && " v" + v.version}</p>
         </div>
         <div className='tagHolder'>
           {v?.tags?.length > 0 && tags}
         </div>
         <div className='counts'>
-          <h5>Downloads</h5>
+          <p><i className='fa-solid fa-download'></i></p>
           <p>{v.downloads}</p>
-          <h5>Likes</h5>
+          <p><i className='fa-solid fa-thumbs-up'></i></p>
           <p>{v.likes}</p>
         </div>
       </Subregion>
     )
   }) : <></>;
 
-  const sortOptions = ["likes", "downloads", "age"].map(v => <option key={v} value={v}>{v}</option>)
+  const sortOptions = ["Likes", "Downloads", "Age"].map(v => <option key={v} value={v.toLowerCase()}>{v}</option>)
   const showInfo = showDetails > 0;
-  const sortDir = ((document.getElementById("sortDirectionCheckbox") as HTMLInputElement)?.checked ?? true) ? "\u2191" : "\u2193";
+  const sortDir = ((document.getElementById("sortDirectionCheckbox") as HTMLInputElement)?.checked ?? false) ? <i title="Sort Descending" className="fa-solid fa-arrow-down-short-wide"></i> : <i title="Sort Ascending" className="fa-solid fa-arrow-down-wide-short"></i>;
   // TODO: Cache a few template details to reduce requests
   return (
     <>
@@ -592,41 +593,44 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         onCancel={() => handleDetails(-1)}
         closedby='any'>
         <div id='templateDownloadDialog'>
-          <h2 style={{ textAlign: 'center' }}>Template Browser</h2>
-          <button command='close' commandfor='templateDownload' style={{ position: "absolute", top: "5px", right: "5px", }} className='fa-solid fa-x'></button>
+          <h2 style={{ marginLeft: "14px" }}>Template Browser</h2>
+          <button command='close' commandfor='templateDownload' style={{ position: "absolute", top: "5px", right: "5px", fontSize: "1.2rem" }} className='fa-solid fa-x'></button>
           <div id='templateDownloadDialogTop'>
-            {showInfo && <button onClick={() => handleDetails(-1)}>Back</button>}
+            {showInfo && <button onClick={() => handleDetails(-1)}><i className='fa-solid fa-arrow-left'></i></button>}
             {
               !showInfo && <>
-                {SendFileInput("Upload", undefined, () => { getListData() })}
                 <div>
-                  <label htmlFor='showOwned'>Show Owned</label>
-                  <input type='checkbox' id='showOwned' onChange={getListData} />
+                  <button className={ownedRef.current?.checked ? 'pressed' : ''} onClick={e => { ((e.currentTarget as HTMLButtonElement)?.firstChild as HTMLInputElement)?.click(); setOffset(0); }}>
+                    <input ref={ownedRef} hidden type='checkbox' id='showOwned' onChange={getListData} />
+                    <b>Owned</b>
+                  </button>
                 </div>
-                <select id="sortBy" onChange={getListData}>{sortOptions}</select>
-                <div>
-                  <button onClick={() => { (document.getElementById("sortDirectionCheckbox") as HTMLInputElement).click() }}>{sortDir}</button>
-                  <input hidden type='checkbox' id='sortDirectionCheckbox' onChange={getListData} />
+                <div id="right">
+                  <select id="sortBy" onChange={getListData}>{sortOptions}</select>
+                  <div>
+                    <button onClick={() => { (document.getElementById("sortDirectionCheckbox") as HTMLInputElement).click() }}>{sortDir}</button>
+                    <input hidden type='checkbox' id='sortDirectionCheckbox' onChange={getListData} />
+                  </div>
+                  <button title="Search" onClick={() => setShowSearch(!showSearch)} className={showSearch ? "pressed" : ""}><i className="fa-solid fa-magnifying-glass"></i></button>
+                  {SendFileInput("Upload Template", undefined, () => { getListData() })}
+                  <button title="Refresh" onClick={getListData} className={isPending ? 'spinning' : ''}><i className="fa-solid fa-arrows-rotate"></i></button>
                 </div>
-                <button onClick={() => setShowSearch(!showSearch)}>S</button>
-                <button onClick={getListData}>Refresh</button>
               </>
             }
           </div>
-          {!showInfo && showSearch && <input type='text' id='searchTemplates' placeholder='Search Name' onKeyDown={e => { if (e.key === 'Enter') getListData() }} onBlur={e => { if (e.target.value == "") setShowSearch(false) }} />}
+          {!showInfo && showSearch && <input type='text' id='searchTemplates' placeholder='Search' onKeyDown={e => { if (e.key === 'Enter') { getListData(); setOffset(0); } }} onBlur={e => { if (e.target.value == "") setShowSearch(false) }} />}
           <div id='templateDownloadDialogMiddle'>
             {!showInfo && databaseData && blocks}
             {showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails(-1)} templateId={showDetails} />}
-            {!showInfo && isPending && <h3>Loading data...</h3>}
           </div>
           <div id='templateDownloadDialogBottom'>
             <input style={{ width: "23rem" }} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={getListData} />
             {!showInfo &&
               <>
-                <div>
-                  <button disabled={offset === 0} onClick={prevPage}>&lt;-</button>
+                <div id='directionArrows'>
+                  <button disabled={offset === 0} onClick={prevPage}><i className='fa-solid fa-arrow-left'></i></button>
                   <span>{databaseData.pageSize != 0 ? Math.floor(offset / databaseData.pageSize) + 1 : 0} / {totalPages}</span>
-                  <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}>-&gt;</button>
+                  <button disabled={offset / databaseData.pageSize >= totalPages - 1} onClick={nextPage}><i className='fa-solid fa-arrow-right'></i></button>
                 </div>
               </>}
           </div>
