@@ -1035,7 +1035,7 @@ function CustomIframe({ ...props }) {
       </Subregion>
       <Subregion id="iframeHolder">
         <div id="scaleHolder">
-          <iframe {...props} ref={setContentRef}></iframe>
+          <iframe {...props} ref={setContentRef} sandbox='allow-modals allow-same-origin'></iframe>
         </div>
       </Subregion>
     </>
