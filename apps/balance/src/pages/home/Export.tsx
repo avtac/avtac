@@ -427,7 +427,6 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
             {data.properties.description !== "" && <p className='description'>{data.properties.description}</p>}
             {data.dateCreated > 0 && <><h4>Last Updated:</h4><p>{dayjs(data.dateCreated).format("MM/DD/YYYY HH:MM:ss")}</p></>}
             {data.version >= 0 && <><h4>Version:</h4><p> {data.version}</p></>}
-            {data.contentHash != "" && <><h4>SHA256:</h4><p style={{ wordBreak: "break-all" }}> {data.contentHash}</p></>}
             {data.properties.inputs && data.properties.inputs.length > 0 &&
               <div>
                 <h4>Inputs</h4>
@@ -465,6 +464,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
                 {data.properties.regions.map(v => <p key={v}>{v}</p>)}
               </div>
             }
+            {data.contentHash != "" && <details><summary><h4>SHA256</h4></summary><p style={{ wordBreak: "break-all" }}> {data.contentHash}</p></details>}
             <div className='buttons'>
               {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
               <button onClick={() => { downloadFile(templateId, data.name + ".hbs") }}>Download</button>
@@ -593,7 +593,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         closedby='any'>
         <div id='templateDownloadDialog'>
           <h2 style={{ textAlign: 'center' }}>Template Browser</h2>
-          <button command='close' commandfor='templateDownload' style={{ position: "absolute", top: "5px", right: "5px", }}>Close</button>
+          <button command='close' commandfor='templateDownload' style={{ position: "absolute", top: "5px", right: "5px", }} className='fa-solid fa-x'></button>
           <div id='templateDownloadDialogTop'>
             {showInfo && <button onClick={() => handleDetails(-1)}>Back</button>}
             {
@@ -615,9 +615,9 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
           </div>
           {!showInfo && showSearch && <input type='text' id='searchTemplates' placeholder='Search Name' onKeyDown={e => { if (e.key === 'Enter') getListData() }} onBlur={e => { if (e.target.value == "") setShowSearch(false) }} />}
           <div id='templateDownloadDialogMiddle'>
-            {!showInfo && isPending && <h3>Loading data...</h3>}
-            {!showInfo && !isPending && blocks}
+            {!showInfo && databaseData && blocks}
             {showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails(-1)} templateId={showDetails} />}
+            {!showInfo && isPending && <h3>Loading data...</h3>}
           </div>
           <div id='templateDownloadDialogBottom'>
             <input style={{ width: "23rem" }} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={getListData} />
@@ -642,7 +642,6 @@ function extractVariables(source: string): templateT {
   if (!match) return { body: "", data: createDatabaseData() };
   const props = JSON.parse(match[1]);
   const template: templateT = { body: source, data: createDatabaseData({ properties: props }) };
-  console.log(template);
   return template;
 }
 
@@ -975,7 +974,7 @@ function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: strin
                   className="manualInput"
                   id={input.name + "-manual-input"}
                   onChange={(e) => setUserValues(input.name, e.target.value)} >
-                  {input.options?.map(o => <option value={o}>{o}</option>)})
+                  {input.options?.map(o => <option key={o} value={o}>{o}</option>)})
                 </select>
                 :
                 <input

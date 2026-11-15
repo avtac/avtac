@@ -68,7 +68,8 @@
 #templateDownloadDialog {
   display: flex;
   flex-direction: column;
-  min-width: 34rem;
+  min-width: 40vw;
+  width: 34rem;
   max-width: 80vw;
   height: calc((.5rem + 3rem + var(--margin-size) * 2) * 5 + 12rem);
   max-height: 80vh;
@@ -205,6 +206,14 @@
     td {
       padding: 4px;
       border: 1px solid var(--text-l);
+    }
+  }
+
+  details {
+    cursor: pointer;
+
+    summary {
+      list-style: none;
     }
   }
 
