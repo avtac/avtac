@@ -94,10 +94,12 @@
     flex: 1;
 
     .exportStoreEntry {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-auto-flow: column;
+      grid-template-columns: 13rem auto 7rem;
+      align-items: start;
       margin: 0px 14px;
-      height: 3rem;
+      min-height: 3rem;
       cursor: pointer;
 
       h5 {
@@ -131,6 +133,67 @@
 .exportStoreEntry:hover {
   background-color: oklch(from var(--sub-region-bg) calc(l * .7) c h) !important;
 }
+
+.fa-x::before {
+  cursor: pointer;
+  padding-top: .1rem;
+  font-size: .6rem;
+}
+
+.tagHolder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  min-height: 2rem;
+
+  .templateTag {
+    align-self: center;
+
+    background-color: var(--accent);
+    box-sizing: unset;
+    border-radius: 1rem;
+
+    min-width: .7rem;
+    width: fit-content;
+    height: 1.3rem;
+
+    padding: 3px 8px;
+    margin: 4px;
+    column-gap: 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: .8rem;
+
+    p {
+      margin: auto;
+      cursor: default;
+    }
+
+    .owned {
+      display: flex;
+      align-items: center;
+    }
+
+  }
+
+  .removing {
+    background-color: var(--warn-bg) !important;
+  }
+
+  .match {
+    background-color: var(--baseColor);
+  }
+
+  input {
+    font-size: .8rem;
+    width: 7rem;
+    margin: auto 3px;
+  }
+}
+
 
 .templateDetails {
   margin: var(--margin-size);

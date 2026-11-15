@@ -84,7 +84,7 @@
     --input-bg: oklch(from var(--accent) 0.2 calc(c * 80%) h);
     --button-bg: oklch(from var(--accent) .4 calc(c * 90%) h);
     --dialog-bg: oklch(from var(--baseColor) l 0 h);
-    --warn-bg: #422;
+    --warn-bg: #C33;
 
     /* Accents */
     --accent: oklch(from var(--baseColor) .7 calc(c * 0.9) h);

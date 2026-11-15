@@ -168,6 +168,7 @@ interface fileDatabaseDataT {
   dateCreated: number;
   owned: boolean;
   contentHash: string;
+  tags: string[];
   properties: templatePropertiesT;
 }
 
@@ -181,6 +182,7 @@ const defaultDatabaseData: fileDatabaseDataT = {
   dateCreated: -1,
   owned: false,
   contentHash: "",
+  tags: [],
   properties: defaultProperties,
 }
 
@@ -309,6 +311,30 @@ function downloadFile(fileId: number, filename: string) {
   document.body.removeChild(link); // Cleanup
 }
 
+function deleteTag(fileId: number, tag: string) {
+  const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+
+  return fetch(`${baseURL}/api/files/tag`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${keyInput.value}`
+    },
+    body: JSON.stringify({ "fileId": fileId, "tag": [tag] })
+  });
+}
+
+function addTag(fileId: number, tag: string) {
+  const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+
+  return fetch(`${baseURL}/api/files/tag`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${keyInput.value}`
+    },
+    body: JSON.stringify({ "fileId": fileId, "tag": [tag] })
+  });
+}
+
 interface TemplateDetailsProps {
   closeDetails: () => void;
   setTemplate: (argv: string) => void;
@@ -318,8 +344,9 @@ interface TemplateDetailsProps {
 function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDetailsProps): ReactNode {
   const [isPending, startTransition] = useTransition();
   const [data, setData] = useState(undefined as (fileDatabaseDataT | undefined));
+  const [addingTag, setAddingTag] = useState(false);
 
-  useEffect(() => {
+  function loadData() {
     if (templateId < 0) {
       setData(defaultDatabaseData);
       return;
@@ -329,15 +356,74 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
       const d = await detailsRequest(templateId);
       setData(createDatabaseData(d));
     })
+  }
+
+  useEffect(() => {
+    loadData()
   }, []);
 
+  const submitInput = (element: HTMLInputElement) => {
+    setAddingTag(false);
+    if (element.value == "" || !data) {
+      return;
+    }
+    if (data.tags)
+      data.tags.push("ADDING: " + element.value.toUpperCase());
+    else
+      data.tags = ["ADDING: " + element.value.toUpperCase()];
+    addTag(data.id ?? -1, element.value)
+      .then(_ => loadData());
+  }
+
+  const tag = (t: string) => {
+    return <div
+      className="templateTag"
+      key={t}>
+      <p>{t}</p>
+      {data?.owned &&
+        <p
+          className={'fa-solid fa-x'}
+          onClick={e => {
+            e.preventDefault();
+            if (data?.owned && e.button === 0) {
+              const element = e.target as HTMLParagraphElement;
+              element.parentElement?.classList.add("removing");
+              {/*                       IS there a way to make this vvvvvvv not just be the text */ }
+              const string = element.parentElement?.childNodes[0].textContent?.trim() ?? ""
+              deleteTag(data?.id ?? 1, string)
+                .then(resp => {
+                  if (!resp.ok) {
+                    element.parentElement?.classList.remove("removing");
+                  } else loadData();
+                })
+                .catch(_ => element.parentElement?.classList.remove("removing"));
+            }
+          }}>
+        </p>
+      }
+    </div>
+  }
+
+  const showTags = ((data?.tags && data.tags.length > 0) || data?.owned) ?? false
   return (
     <Subregion className='templateDetails'>
       <div>
-        {templateId > 0 && isPending && <div>Loading...</div>}
-        {templateId > 0 && !isPending && data &&
+        {templateId > 0 && !data && isPending && <div>Loading...</div>}
+        {templateId > 0 && data &&
           <>
             <h3>{data.properties.name}</h3>
+            {showTags && <div className='tagHolder'>
+              {data.tags && data.tags.sort((a, b) => a.localeCompare(b)).map(t => tag(t))}
+              {data.owned && !addingTag && <button className='templateTag fa-solid fa-plus' onClick={() => setAddingTag(true)}></button>}
+              {data.owned && addingTag &&
+                <input
+                  autoFocus={true}
+                  type='text'
+                  id='newTagInput'
+                  onKeyDown={e => { if (e.key === "Enter") submitInput(e.target as HTMLInputElement) }}
+                  onBlur={e => submitInput(e.target as HTMLInputElement)}
+                />}
+            </div>}
             {data.properties.description !== "" && <p className='description'>{data.properties.description}</p>}
             {data.dateCreated > 0 && <><h4>Last Updated:</h4><p>{dayjs(data.dateCreated).format("MM/DD/YYYY HH:MM:ss")}</p></>}
             {data.version >= 0 && <><h4>Version:</h4><p> {data.version}</p></>}
@@ -465,6 +551,14 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   }
 
   const blocks = databaseData.data ? databaseData.data.map(v => {
+    const tags = v.tags ? v.tags
+      .sort((a, b) => a.localeCompare(b))
+      .map(t => {
+        const check = (document.getElementById('searchTemplates') as HTMLInputElement)?.value.toLowerCase() ?? "";
+        const match = t.toLowerCase().includes(check) && check != "";
+        return <p className={"templateTag" + (match ? " match" : "")} key={t}>{t}</p>
+      }) : <></>
+
     const foundVersion = newestSavedVersion(v.uuid);
     const downloaded = foundVersion > 0;
     const newest = foundVersion === v.version;
@@ -473,6 +567,9 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         <div>
           <h5>Name{downloaded && ": Saved"}{downloaded && !newest && " v" + foundVersion}{v.owned && " Owner"}</h5>
           <p>{v.name}{downloaded && !newest && " v" + v.version}</p>
+        </div>
+        <div className='tagHolder'>
+          {v?.tags?.length > 0 && tags}
         </div>
         <div className='counts'>
           <h5>Downloads</h5>
