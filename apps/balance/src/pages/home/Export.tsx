@@ -167,6 +167,7 @@ interface fileDatabaseDataT {
   likes: number;
   dateCreated: number;
   owned: boolean;
+  liked: boolean;
   contentHash: string;
   tags: string[];
   properties: templatePropertiesT;
@@ -181,6 +182,7 @@ const defaultDatabaseData: fileDatabaseDataT = {
   likes: -1,
   dateCreated: -1,
   owned: false,
+  liked: false,
   contentHash: "",
   tags: [],
   properties: defaultProperties,
@@ -468,9 +470,22 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
           </div>
           <div className='buttons'>
             {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
-            <button title="Download File" onClick={() => { downloadFile(templateId, data.name + ".hbs") }}><i className="fa-solid fa-file-arrow-down"></i></button>
-            <button title="Get File" onClick={() => { addFile(setTemplate, data); closeDetails(); }}><i className="fa-solid fa-plus"></i></button>
-            <button title="Like" onClick={() => { likeRequest(templateId); }}><i className="fa-solid fa-thumbs-up"></i></button>
+            <button
+              title="Download File"
+              onClick={() => { downloadFile(templateId, data.name + ".hbs") }}>
+              <i className="fa-solid fa-file-arrow-down"></i>
+            </button>
+            <button
+              title="Get File"
+              onClick={() => { addFile(setTemplate, data); closeDetails(); }}>
+              <i className="fa-solid fa-plus"></i>
+            </button>
+            <button
+              title="Like"
+              className={data.liked ? 'template-liked' : ''}
+              onClick={e => { e.currentTarget.classList.toggle("template-liked"); likeRequest(templateId); }}>
+              <i className="fa-solid fa-heart"></i>
+            </button>
           </div>
         </>
       }
@@ -575,7 +590,15 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         <div className='counts'>
           <p><i className='fa-solid fa-download'></i></p>
           <p>{v.downloads}</p>
-          <p><i className='fa-solid fa-thumbs-up'></i></p>
+          <p
+            onClick={e => {
+              e.stopPropagation();
+              e.currentTarget.classList.toggle('template-pending');
+              likeRequest(v.id).then(_ => getListData())
+            }}
+            className={v.liked ? 'template-liked' : ''}>
+            <i className='fa-solid fa-heart'></i>
+          </p>
           <p>{v.likes}</p>
         </div>
       </Subregion>

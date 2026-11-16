@@ -61,6 +61,14 @@
   overflow: hidden;
 }
 
+.template-liked {
+  color: red;
+}
+
+.template-pending {
+  color: indianred;
+}
+
 :has(iframe) {
   color-scheme: light;
 }
