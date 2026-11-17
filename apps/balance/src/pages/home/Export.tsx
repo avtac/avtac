@@ -4,6 +4,7 @@ import diagramStyle from '../../Diagram.css?inline'
 import graphStyle from '../../Graph.css?inline'
 import Handlebars from "handlebars"
 import { useMemo, useContext, useEffect, useRef, useState, type ReactNode, type RefObject, useTransition } from "react";
+import { validate as uuidValidate } from 'uuid';
 import { renderToString } from 'react-dom/server';
 import { baseFuelUnit, baseLengthUnit, baseWeightUnit, DiagramModes, type aircraftT, type fuelUnitsT, type lengthUnitsT, type loadingT, type nameProps, type setupT, type weightUnitsT } from "../../Types";
 import { calculateBalanceForLanding, calculateBalanceForOperationConfig, calculateBalanceForTakeoff, calculateBalanceForZeroFuel, calculateEmptyBalanceForConfig, calculateMAC, roundNumber, validateAircraft, withinRegion } from '../../utility';
@@ -209,7 +210,7 @@ async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDataba
   const index = templates.findIndex(t => t.data.id === fileInfo.id);
   if (index < 0) {
     const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
-    const resp = await fetch(`${baseURL}/api/files/${fileInfo.id}/content`, {
+    const resp = await fetch(`${baseURL}/api/files/${fileInfo.uuid}/download`, {
       headers: {
         "Authorization": `Bearer ${keyInput.value}`
       }
@@ -267,10 +268,10 @@ const SendFileInput = (text: string, data: (fileDatabaseDataT | undefined), post
   </button>
 )
 
-async function detailsRequest(id: number): Promise<any> {
+async function detailsRequest(uuid: string): Promise<any> {
   const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
 
-  const resp = await fetch(`${baseURL}/api/files/${id}`, {
+  const resp = await fetch(`${baseURL}/api/files/${uuid}`, {
     headers: {
       "Authorization": `Bearer ${keyInput.value}`
     }
@@ -280,9 +281,9 @@ async function detailsRequest(id: number): Promise<any> {
   return resp.json();
 }
 
-function likeRequest(id: number): Promise<Response> {
+function likeRequest(fileUuid: string): Promise<Response> {
   const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
-  return fetch(`${baseURL}/api/files/${id}/like`, {
+  return fetch(`${baseURL}/api/files/${fileUuid}/like`, {
     headers: {
       "Authorization": `Bearer ${keyInput.value}`
     },
@@ -304,9 +305,9 @@ async function getListRequest(options: ListOptionsT): Promise<any> {
   return json;
 }
 
-function downloadFile(fileId: number, filename: string) {
+function downloadFile(fileUuid: string, filename: string) {
   const link = document.createElement('a');
-  link.href = `${baseURL}/api/files/${fileId}/content`;
+  link.href = `${baseURL}/api/files/${fileUuid}/download`;
   link.download = filename; // Specifies the saved filename
   document.body.appendChild(link);
   link.click();
@@ -340,22 +341,22 @@ function addTag(fileId: number, tag: string) {
 interface TemplateDetailsProps {
   closeDetails: () => void;
   setTemplate: (argv: string) => void;
-  templateId: number;
+  templateUuid: string;
 }
 
-function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDetailsProps): ReactNode {
+function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDetailsProps): ReactNode {
   const [isPending, startTransition] = useTransition();
   const [data, setData] = useState(undefined as (fileDatabaseDataT | undefined));
   const [addingTag, setAddingTag] = useState(false);
 
   function loadData() {
-    if (templateId < 0) {
+    if (!uuidValidate(templateUuid)) {
       setData(defaultDatabaseData);
       return;
     }
     // TODO: OPTIMIZATION: store data received so requests can be reduced
     startTransition(async () => {
-      const d = await detailsRequest(templateId);
+      const d = await detailsRequest(templateUuid);
       setData(createDatabaseData(d));
     })
   }
@@ -369,10 +370,12 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
     if (element.value == "" || !data) {
       return;
     }
-    if (data.tags)
-      data.tags.push("ADDING: " + element.value.toUpperCase());
+    if (data.tags) {
+      data.tags.push(element.value.toUpperCase());
+      data.tags.sort((a, b) => a.localeCompare(b));
+    }
     else
-      data.tags = ["ADDING: " + element.value.toUpperCase()];
+      data.tags = [element.value.toUpperCase()];
     addTag(data.id ?? -1, element.value)
       .then(_ => loadData());
   }
@@ -409,8 +412,8 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
   const showTags = ((data?.tags && data.tags.length > 0) || data?.owned) ?? false
   return (
     <Subregion className='templateDetails'>
-      {templateId > 0 && !data && isPending && <p className={'spinning'}><i className="fa-solid fa-arrows-rotate"></i></p>}
-      {templateId > 0 && data &&
+      {uuidValidate(templateUuid) && !data && isPending && <p className={'spinning'}><i className="fa-solid fa-arrows-rotate"></i></p>}
+      {uuidValidate(templateUuid) && data &&
         <>
           <div>
             <h3>{data.properties.name}{data.version >= 0 && " v" + data.version}</h3>
@@ -472,7 +475,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
             {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
             <button
               title="Download File"
-              onClick={() => { downloadFile(templateId, data.name + ".hbs") }}>
+              onClick={() => { downloadFile(templateUuid, data.name + ".hbs") }}>
               <i className="fa-solid fa-file-arrow-down"></i>
             </button>
             <button
@@ -483,7 +486,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateId }: TemplateDeta
             <button
               title="Like"
               className={data.liked ? 'template-liked' : ''}
-              onClick={e => { e.currentTarget.classList.toggle("template-liked"); likeRequest(templateId); }}>
+              onClick={e => { e.currentTarget.classList.toggle("template-liked"); likeRequest(templateUuid); }}>
               <i className="fa-solid fa-heart"></i>
             </button>
           </div>
@@ -521,7 +524,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   const [isPending, startTransition] = useTransition()
   const [databaseData, setDatabaseData] = useState(defaultFileDatabaseList());
   const [offset, setOffset] = useState(0);
-  const [showDetails, setShowDetails] = useState(-1)
+  const [showDetails, setShowDetails] = useState("")
   const [showSearch, setShowSearch] = useState(false)
 
   const totalPages = databaseData.pageSize != 0 ? Math.floor((databaseData.maxOffset - 1) / databaseData.pageSize) + 1 : 1;
@@ -558,10 +561,10 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
     else isMounted.current = true;
   }, [offset]);
 
-  function handleDetails(id: number) {
-    setShowDetails(id);
+  function handleDetails(uuid: string) {
+    setShowDetails(uuid);
     // Refresh when returning to main list
-    if (id == -1) {
+    if (!uuidValidate(uuid)) {
       getListData();
     }
   }
@@ -579,7 +582,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
     const downloaded = foundVersion > 0;
     const newest = foundVersion === v.version;
     return (
-      <Subregion key={v.uuid} className={'exportStoreEntry'} onClick={() => handleDetails(v.id)} >
+      <Subregion key={v.uuid} className={'exportStoreEntry'} onClick={() => handleDetails(v.uuid)} >
         <div>
           <h5>Name{downloaded && <span className="savedTag">Saved</span>}{downloaded && !newest && " v" + foundVersion}{v.owned && <span className="ownerTag">Owner</span>}</h5>
           <p>{v.name}{downloaded && !newest && " v" + v.version}</p>
@@ -594,7 +597,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
             onClick={e => {
               e.stopPropagation();
               e.currentTarget.classList.toggle('template-pending');
-              likeRequest(v.id).then(_ => getListData())
+              likeRequest(v.uuid).then(_ => getListData())
             }}
             className={v.liked ? 'template-liked' : ''}>
             <i className='fa-solid fa-heart'></i>
@@ -606,20 +609,20 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
   }) : <></>;
 
   const sortOptions = ["Likes", "Downloads", "Age"].map(v => <option key={v} value={v.toLowerCase()}>{v}</option>)
-  const showInfo = showDetails > 0;
+  const showInfo = uuidValidate(showDetails);
   const sortDir = ((document.getElementById("sortDirectionCheckbox") as HTMLInputElement)?.checked ?? false) ? <i title="Sort Descending" className="fa-solid fa-arrow-down-short-wide"></i> : <i title="Sort Ascending" className="fa-solid fa-arrow-down-wide-short"></i>;
   // TODO: Cache a few template details to reduce requests
   return (
     <>
       <dialog
         id='templateDownload'
-        onCancel={() => handleDetails(-1)}
+        onCancel={() => handleDetails("")}
         closedby='any'>
         <div id='templateDownloadDialog'>
           <h2 style={{ marginLeft: "14px" }}>Template Browser</h2>
           <button command='close' commandfor='templateDownload' style={{ position: "absolute", top: "5px", right: "5px", fontSize: "1.2rem" }} className='fa-solid fa-x'></button>
           <div id='templateDownloadDialogTop'>
-            {showInfo && <button onClick={() => handleDetails(-1)}><i className='fa-solid fa-arrow-left'></i></button>}
+            {showInfo && <button onClick={() => handleDetails("")}><i className='fa-solid fa-arrow-left'></i></button>}
             {
               !showInfo && <>
                 <div>
@@ -644,7 +647,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
           {!showInfo && showSearch && <input type='text' id='searchTemplates' placeholder='Search' onKeyDown={e => { if (e.key === 'Enter') { getListData(); setOffset(0); } }} onBlur={e => { if (e.target.value == "") setShowSearch(false) }} />}
           <div id='templateDownloadDialogMiddle'>
             {!showInfo && databaseData && blocks}
-            {showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails(-1)} templateId={showDetails} />}
+            {showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails("")} templateUuid={showDetails} />}
           </div>
           <div id='templateDownloadDialogBottom'>
             <input style={{ width: "23rem" }} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={getListData} />
