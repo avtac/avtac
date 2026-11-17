@@ -591,18 +591,22 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
           {v?.tags?.length > 0 && tags}
         </div>
         <div className='counts'>
-          <p><i className='fa-solid fa-download'></i></p>
-          <p>{v.downloads}</p>
-          <p
-            onClick={e => {
-              e.stopPropagation();
-              e.currentTarget.classList.toggle('template-pending');
-              likeRequest(v.uuid).then(_ => getListData())
-            }}
-            className={v.liked ? 'template-liked' : ''}>
-            <i className='fa-solid fa-heart'></i>
-          </p>
-          <p>{v.likes}</p>
+          <div>
+            <p>{v.downloads.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })}</p>
+            <p>{v.likes.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 })}</p>
+          </div>
+          <div>
+            <p><i className='fa-solid fa-download'></i></p>
+            <p
+              onClick={e => {
+                e.stopPropagation();
+                e.currentTarget.classList.toggle('template-pending');
+                likeRequest(v.uuid).then(_ => getListData())
+              }}
+              className={v.liked ? 'template-liked' : ''}>
+              <i className='fa-solid fa-heart'></i>
+            </p>
+          </div>
         </div>
       </Subregion>
     )
