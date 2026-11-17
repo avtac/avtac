@@ -164,6 +164,7 @@ interface fileDatabaseDataT {
   id: number;
   uuid: string;
   version: number;
+  versions: number[];
   downloads: number;
   likes: number;
   dateCreated: number;
@@ -179,6 +180,7 @@ const defaultDatabaseData: fileDatabaseDataT = {
   id: -1,
   uuid: "",
   version: -1,
+  versions: [],
   downloads: -1,
   likes: -1,
   dateCreated: -1,
@@ -210,7 +212,7 @@ async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDataba
   const index = templates.findIndex(t => t.data.id === fileInfo.id);
   if (index < 0) {
     const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
-    const resp = await fetch(`${baseURL}/api/files/${fileInfo.uuid}/download`, {
+    const resp = await fetch(`${baseURL}/api/files/${fileInfo.uuid}/versions/${fileInfo.version}/download`, {
       headers: {
         "Authorization": `Bearer ${keyInput.value}`
       }
@@ -268,10 +270,10 @@ const SendFileInput = (text: string, data: (fileDatabaseDataT | undefined), post
   </button>
 )
 
-async function detailsRequest(uuid: string): Promise<any> {
+async function detailsRequest(uuid: string, version: number = -1): Promise<any> {
   const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
 
-  const resp = await fetch(`${baseURL}/api/files/${uuid}`, {
+  const resp = await fetch(`${baseURL}/api/files/${uuid}/versions/${version}`, {
     headers: {
       "Authorization": `Bearer ${keyInput.value}`
     }
@@ -305,9 +307,9 @@ async function getListRequest(options: ListOptionsT): Promise<any> {
   return json;
 }
 
-function downloadFile(fileUuid: string, filename: string) {
+function downloadFile(fileUuid: string, version: number, filename: string) {
   const link = document.createElement('a');
-  link.href = `${baseURL}/api/files/${fileUuid}/download`;
+  link.href = `${baseURL}/api/files/${fileUuid}/versions/${version}/download`;
   link.download = filename; // Specifies the saved filename
   document.body.appendChild(link);
   link.click();
@@ -348,6 +350,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
   const [isPending, startTransition] = useTransition();
   const [data, setData] = useState(undefined as (fileDatabaseDataT | undefined));
   const [addingTag, setAddingTag] = useState(false);
+  const [selectVersion, setSelectVersion] = useState(false);
 
   function loadData() {
     if (!uuidValidate(templateUuid)) {
@@ -409,6 +412,8 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
     </div>
   }
 
+  const versionOptions = data?.versions?.map(v => <option value={v} key={v}>v{v}</option>) ?? [];
+
   const showTags = ((data?.tags && data.tags.length > 0) || data?.owned) ?? false
   return (
     <Subregion className='templateDetails'>
@@ -416,7 +421,18 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
       {uuidValidate(templateUuid) && data &&
         <>
           <div>
-            <h3>{data.properties.name}{data.version >= 0 && " v" + data.version}</h3>
+            <div className='detailsTitle'>
+              <h3>{data.properties.name}</h3>
+              <span className={data.versions.length > 1 ? 'clickable' : ''} onClick={_ => setSelectVersion(data.versions.length > 1 && !selectVersion)}>{data.version >= 0 && " v" + data.version}</span>
+              {selectVersion && data.versions.length > 1 &&
+                <select
+                  id="selectDetailVersion"
+                  value={data.version}
+                  onBlur={_ => setSelectVersion(false)}
+                  onChange={e => detailsRequest(data.uuid, Number((e.target as HTMLSelectElement).value)).then(d => setData(d))}>
+                  {versionOptions}
+                </select>}
+            </div>
 
             {showTags && <div className='tagHolder'>
               {data.tags && data.tags.sort((a, b) => a.localeCompare(b)).map(t => tag(t))}
@@ -475,7 +491,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
             {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
             <button
               title="Download File"
-              onClick={() => { downloadFile(templateUuid, data.name + ".hbs") }}>
+              onClick={() => { downloadFile(templateUuid, data.version, data.name + ".hbs") }}>
               <i className="fa-solid fa-file-arrow-down"></i>
             </button>
             <button

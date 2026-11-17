@@ -142,8 +142,12 @@
       }
 
       .counts {
-        display: grid;
-        grid-template-columns: 1.7rem auto;
+        display: flex;
+        column-gap: 4px;
+
+        p {
+          text-align: end;
+        }
       }
 
       .savedTag,
@@ -249,6 +253,21 @@
   margin: var(--margin-size);
   display: flex;
   justify-content: space-between;
+
+  .clickable {
+    cursor: pointer;
+  }
+
+  .detailsTitle {
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    column-gap: 4px;
+
+    #selectDetailVersion {
+      width: 3.3rem;
+    }
+  }
 
   table {
     margin-left: 1rem;
