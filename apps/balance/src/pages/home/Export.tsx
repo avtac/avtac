@@ -140,6 +140,7 @@ const headBase = `
 
 interface fileDatabaseListT {
   data: fileDatabaseDataT[];
+  authorized: boolean;
   maxOffset: number;
   pageSize: number;
 }
@@ -156,7 +157,7 @@ interface ListOptionsT {
 }
 
 function defaultFileDatabaseList(): fileDatabaseListT {
-  return { data: [], maxOffset: 0, pageSize: 5 }
+  return { data: [], authorized: false, maxOffset: 0, pageSize: 5 }
 }
 
 interface fileDatabaseDataT {
@@ -567,7 +568,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
         const d: fileDatabaseListT = await getListRequest(options);
         setDatabaseData(d);
       } catch (err) {
-        setDatabaseData({ maxOffset: databaseData.maxOffset, pageSize: databaseData.pageSize, data: [] });
+        setDatabaseData({ maxOffset: databaseData.maxOffset, authorized: false, pageSize: databaseData.pageSize, data: [] });
       }
     })
   };
@@ -670,7 +671,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps) {
             {showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails("")} templateUuid={showDetails} />}
           </div>
           <div id='templateDownloadDialogBottom'>
-            <input style={{ width: "23rem" }} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={getListData} />
+            <input style={{ width: "23rem" }} className={databaseData.authorized ? 'authorized' : ''} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={getListData} />
             {!showInfo &&
               <>
                 <div id='directionArrows'>

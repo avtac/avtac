@@ -171,6 +171,10 @@
     align-items: center;
     gap: .5rem;
 
+    .authorized {
+      color: forestgreen;
+    }
+
     #directionArrows {
       display: flex;
       align-items: center;
