@@ -89,6 +89,16 @@ export function likeRequest(fileUuid: string): Promise<Response> {
   })
 }
 
+export function deleteRequest(data: fileDatabaseDataT): Promise<Response> {
+  const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+  return fetch(`${baseURL}/api/files/${data.uuid}/versions/${data.version}`, {
+    headers: {
+      "Authorization": `Bearer ${keyInput.value}`
+    },
+    method: 'DELETE'
+  })
+}
+
 export async function getListRequest(options: ListOptionsT): Promise<any> {
   // TODO: Limit request rate
   const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;

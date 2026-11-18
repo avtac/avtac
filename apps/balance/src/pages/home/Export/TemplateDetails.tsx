@@ -3,10 +3,17 @@ import { validate as uuidValidate } from 'uuid';
 import { useTransition, useEffect, useState, type ReactNode } from "react";
 import { Subregion } from '@avtac/ui/Layout';
 import { createDatabaseData, type fileDatabaseDataT } from './apiStructs';
-import { addFile, addTag, deleteTag, detailsRequest, downloadFile, likeRequest, sendFile } from './api';
+import { addFile, addTag, deleteRequest, deleteTag, detailsRequest, downloadFile, likeRequest, sendFile } from './api';
 
-export const SendFileInput = (text: string, data: (fileDatabaseDataT | undefined), postExecute: (resp: Response) => void) => (
-  <button title={text} onClick={e => { const target = e.currentTarget as HTMLButtonElement; target.firstChild instanceof HTMLInputElement ? target.firstChild.click() : undefined; }}>
+const DeleteFile = (text: string, allowed: boolean, data: fileDatabaseDataT, postExecute: (resp: Response) => void) => (
+  // TODO: Warn if deleting file with only one version that all file history (likes, downloads) will be lost
+  <button title={text} disabled={!allowed} onClick={() => deleteRequest(data)?.then(resp => postExecute(resp))}>
+    <i className='fa-solid fa-trash'></i>
+  </button >
+)
+
+export const SendFileInput = (text: string, allowed: boolean, data: (fileDatabaseDataT | undefined), postExecute: (resp: Response) => void) => (
+  <button title={text} disabled={!allowed} onClick={e => { const target = e.currentTarget as HTMLButtonElement; target.firstChild instanceof HTMLInputElement ? target.firstChild.click() : undefined; }}>
     <input hidden accept=".hbs" type="file" onChange={(e) => sendFile(e, data)?.then(resp => postExecute(resp))}></input>
     <i className='fa-solid fa-file-arrow-up'></i>
   </button>
@@ -160,7 +167,8 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
             {data.contentHash != "" && <details><summary><h4>SHA256</h4></summary><p style={{ wordBreak: "break-all" }}> {data.contentHash}</p></details>}
           </div>
           <div className='buttons'>
-            {data.owned && SendFileInput("Upload New Version", data, closeDetails)}
+            {data.owned && SendFileInput("Upload New Version", data.owned, data, (_) => detailsRequest(data.uuid).then(r => setData(r)))}
+            {data.owned && DeleteFile("Delete File", data.owned, data, (_) => detailsRequest(data.uuid).then(r => setData(r)))}
             <button
               title="Download File"
               onClick={() => { downloadFile(templateUuid, data.version, data.name + ".hbs") }}>

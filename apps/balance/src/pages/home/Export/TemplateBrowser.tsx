@@ -172,7 +172,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
                     <input hidden type='checkbox' id='sortDirectionCheckbox' onChange={refresh} />
                   </div>
                   <button title="Search" onClick={() => setShowSearch(!showSearch)} className={showSearch ? "pressed" : ""}><i className="fa-solid fa-magnifying-glass"></i></button>
-                  {SendFileInput("Upload Template", undefined, () => { refresh() })}
+                  {SendFileInput("Upload Template", databaseData.authorized, undefined, () => { refresh() })}
                   <button title="Refresh" onClick={refresh} className={isPending ? 'spinning' : ''}><i className="fa-solid fa-arrows-rotate"></i></button>
                 </div>
               </>
