@@ -74,6 +74,7 @@ interface seatIconProps {
 
 // offX, offY are in canvas units
 function SeatIcon({ count, name, onClick, offX = 0, offY = 0, opsCount = 0, loadedCount = 0 }: seatIconProps): ReactNode {
+  if (count <= 0) return;
   const left = offX - seatSize / 2;
   return (
     <>
@@ -197,22 +198,22 @@ function Diagram({ aircraft, loading, setLoading, diagramMode, selectedConfig, s
       return aircraft.cargoAreas[cargoAreaIndex];
     }).filter(v => v != undefined);
   }
-  if (seats.length === 0 && cargoAreas.length === 0) return (<></>);
+  if (seats.length <= 0 && cargoAreas.length <= 0) return (<></>);
 
   const planePadding = 6;
   let minArm = Infinity;
   let maxArm = 0;
   let minDisplacement = 0;
   let maxDisplacement = 0;
-  if (seats.length !== 0) {
-    minArm = seats.reduce((min, item) => Math.min(min, item.arm), seats[0].arm);
-    maxArm = seats.reduce((max, item) => Math.max(max, item.arm), seats[0].arm);
+  if (seats.length > 0) {
+    minArm = seats.reduce((min, item) => Math.min(min, item.seatCount > 0 ? item.arm : min), seats[0].arm);
+    maxArm = seats.reduce((max, item) => Math.max(max, item.seatCount > 0 ? item.arm : max), seats[0].arm);
 
     minDisplacement = seats.reduce((min, item) => Math.min(min, item.lateralDist - item.seatCount * seatSize / 2), seats[0].lateralDist - seats[0].seatCount * seatSize / 2);
     maxDisplacement = seats.reduce((max, item) => Math.max(max, item.lateralDist + item.seatCount * seatSize / 2), seats[0].lateralDist + seats[0].seatCount * seatSize / 2);
   }
 
-  if (cargoAreas.length !== 0) {
+  if (cargoAreas.length > 0) {
     minArm = Math.min(minArm, cargoAreas.reduce((min, item) => Math.min(min, item.arm), cargoAreas[0].arm));
     maxArm = Math.max(maxArm, cargoAreas.reduce((max, item) => Math.max(max, item.arm), cargoAreas[0].arm));
   }
