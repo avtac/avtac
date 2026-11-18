@@ -160,10 +160,12 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
             {
               !showInfo && <>
                 <div>
-                  <button className={ownedRef.current?.checked ? 'pressed' : ''} onClick={e => { ((e.currentTarget as HTMLButtonElement)?.firstChild as HTMLInputElement)?.click(); setOffset(0); }}>
-                    <input ref={ownedRef} hidden type='checkbox' id='showOwned' onChange={refresh} />
-                    <b>Owned</b>
-                  </button>
+                  {databaseData.authorized &&
+                    <button className={ownedRef.current?.checked ? 'pressed' : ''} onClick={e => { ((e.currentTarget as HTMLButtonElement)?.firstChild as HTMLInputElement)?.click(); setOffset(0); }}>
+                      <input ref={ownedRef} hidden type='checkbox' id='showOwned' onChange={refresh} />
+                      <b>Owned</b>
+                    </button>
+                  }
                 </div>
                 <div id="right">
                   <select id="sortBy" onChange={refresh}>{sortOptions}</select>
