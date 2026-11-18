@@ -328,6 +328,13 @@ export function roundNumber(n: number, precision: number): number {
   return Math.round(n * precision) / precision;
 }
 
+export async function sha256(text: string) {
+  const msgBuffer = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export const saveStringToFile = (content: string, filename: string) => {
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
