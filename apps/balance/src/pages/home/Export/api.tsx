@@ -145,3 +145,7 @@ export function addTag(fileId: number, tag: string) {
     body: JSON.stringify({ "fileId": fileId, "tag": [tag] })
   });
 }
+
+export function generateKey() {
+  return fetch(`${baseURL}/api/auth/generate`);
+}

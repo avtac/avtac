@@ -4,6 +4,7 @@ import { Subregion } from '@avtac/ui/Layout';
 import { createDatabaseData, defaultFileDatabaseList, type fileDatabaseDataT, type fileDatabaseListT, type ListOptionsT, type SortOptions, type templateT } from './apiStructs';
 import { getListRequest, likeRequest } from './api';
 import TemplateDetails, { SendFileInput } from './TemplateDetails';
+import KeyMaker from './KeyMaker';
 
 ///////////////////////////
 // Helpers
@@ -97,6 +98,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
   const [offset, setOffset] = useState(0);
   const [showDetails, setShowDetails] = useState("")
   const [showSearch, setShowSearch] = useState(false)
+  const [showKeyGen, setKeyGen] = useState(false)
 
   const totalPages = databaseData.pageSize != 0 ? Math.floor((databaseData.maxOffset - 1) / databaseData.pageSize) + 1 : 1;
   function nextPage() {
@@ -112,6 +114,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
   }
 
   function refresh() {
+    if (isPending) return;
     startTransition(async () => {
       try {
         const owned = (document.getElementById('showOwned') as HTMLInputElement)?.checked ?? false
@@ -156,15 +159,18 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
           <h2 style={{ marginLeft: "14px" }}>Template Browser</h2>
           <button command='close' commandfor='templateDownload' style={{ position: "absolute", top: "5px", right: "5px", fontSize: "1.2rem" }} className='fa-solid fa-x'></button>
           <div id='templateDownloadDialogTop'>
-            {showInfo && <button onClick={() => handleDetails("")}><i className='fa-solid fa-arrow-left'></i></button>}
+            {!showKeyGen && showInfo && <button onClick={() => handleDetails("")}><i className='fa-solid fa-arrow-left'></i></button>}
             {
-              !showInfo && <>
+              !showKeyGen && !showInfo && <>
                 <div>
                   {databaseData.authorized &&
                     <button className={ownedRef.current?.checked ? 'pressed' : ''} onClick={e => { ((e.currentTarget as HTMLButtonElement)?.firstChild as HTMLInputElement)?.click(); setOffset(0); }}>
                       <input ref={ownedRef} hidden type='checkbox' id='showOwned' onChange={refresh} />
                       <b>Owned</b>
                     </button>
+                  }
+                  {!databaseData.authorized &&
+                    <button onClick={_ => setKeyGen(true)}><b>Generate Key</b></button>
                   }
                 </div>
                 <div id="right">
@@ -180,14 +186,15 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
               </>
             }
           </div>
-          {!showInfo && showSearch && <input type='text' id='searchTemplates' placeholder='Search' onKeyDown={e => { if (e.key === 'Enter') { refresh(); setOffset(0); } }} onBlur={e => { if (e.target.value == "") setShowSearch(false) }} />}
+          {!showKeyGen && !showInfo && showSearch && <input type='text' id='searchTemplates' placeholder='Search' onKeyDown={e => { if (e.key === 'Enter') { refresh(); setOffset(0); } }} onBlur={e => { if (e.target.value == "") setShowSearch(false) }} />}
           <div id='templateDownloadDialogMiddle'>
-            {!showInfo && databaseData && blocks}
-            {showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails("")} templateUuid={showDetails} />}
+            {!showKeyGen && !showInfo && databaseData && blocks}
+            {!showKeyGen && showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails("")} templateUuid={showDetails} />}
+            {showKeyGen && <KeyMaker exit={() => setKeyGen(false)} />}
           </div>
           <div id='templateDownloadDialogBottom'>
             <input style={{ width: "23rem" }} className={databaseData.authorized ? 'authorized' : ''} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={refresh} />
-            {!showInfo &&
+            {!showKeyGen && !showInfo &&
               <>
                 <div id='directionArrows'>
                   <button disabled={offset === 0} onClick={prevPage}><i className='fa-solid fa-arrow-left'></i></button>

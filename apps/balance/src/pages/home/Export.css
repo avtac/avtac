@@ -330,3 +330,21 @@
   animation-iteration-count: infinite;
   animation-timing-function: linear;
 }
+
+#key-gen {
+  text-align: center;
+
+  .warn {
+    color: var(--text-w)
+  }
+
+  #key {
+    margin: 1rem auto;
+    color: var(--accent)
+  }
+
+  div:has(button) {
+    display: grid;
+    row-gap: 4px;
+  }
+}
