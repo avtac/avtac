@@ -83,9 +83,20 @@ const headBase = `
   <style>${graphStyle}</style>
   <style>${diagramStyle}</style>
   <style>
-    body {
-      width: fit-content;
+    :root {
+      background-color: grey;
       margin: auto;
+      width: fit-content;
+      display: grid;
+    }
+    @media screen {
+      :root {
+        padding: 1rem;
+      }
+    }
+    body {
+      box-sizing: border-box;
+      background-color: white;
     }
     #diagram #aircraft {
       fill: none !important;
