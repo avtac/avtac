@@ -3,18 +3,24 @@ import { validate as uuidValidate } from 'uuid';
 import { useTransition, useEffect, useState, type ReactNode } from "react";
 import { Subregion } from '@avtac/ui/Layout';
 import { createDatabaseData, type fileDatabaseDataT } from './apiStructs';
-import { addFile, addTag, deleteRequest, deleteTag, detailsRequest, downloadFile, likeRequest, sendFile } from './api';
+import { addFile, addTag, deleteRequest, deleteTag, detailsRequest, downloadFile, likeRequest, sendFile, showStatus } from './api';
 
 const DeleteFile = (text: string, allowed: boolean, data: fileDatabaseDataT, postExecute: (resp: Response) => void) => (
   // TODO: Warn if deleting file with only one version that all file history (likes, downloads) will be lost
-  <button title={text} disabled={!allowed} onClick={() => deleteRequest(data)?.then(resp => postExecute(resp))}>
+  <button title={text} disabled={!allowed} onClick={() => deleteRequest(data)?.then(resp => { showStatus(resp); postExecute(resp) })}>
     <i className='fa-solid fa-trash'></i>
   </button >
 )
 
 export const SendFileInput = (text: string, allowed: boolean, data: (fileDatabaseDataT | undefined), postExecute: (resp: Response) => void) => (
   <button title={text} disabled={!allowed} onClick={e => { const target = e.currentTarget as HTMLButtonElement; target.firstChild instanceof HTMLInputElement ? target.firstChild.click() : undefined; }}>
-    <input hidden accept=".hbs" type="file" onChange={(e) => sendFile(e, data)?.then(resp => postExecute(resp))}></input>
+    <input hidden accept=".hbs" type="file" onChange={(e) =>
+      sendFile(e, data)
+        ?.then(resp => {
+          showStatus(resp);
+          postExecute(resp);
+        })
+    }></input>
     <i className='fa-solid fa-file-arrow-up'></i>
   </button>
 )
@@ -38,8 +44,13 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
     }
     // TODO: OPTIMIZATION: store data received so requests can be reduced
     startTransition(async () => {
-      const d = await detailsRequest(templateUuid);
-      setData(createDatabaseData(d));
+      try {
+        const d = await detailsRequest(templateUuid);
+        setData(createDatabaseData(d));
+      } catch (error) {
+        setData(createDatabaseData())
+        console.warn("Received bad data format", error);
+      }
     })
   }
 
@@ -59,7 +70,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
     else
       data.tags = [element.value.toUpperCase()];
     addTag(data.id ?? -1, element.value)
-      .then(_ => loadData());
+      .then(resp => { showStatus(resp); loadData(); });
   }
 
   const tag = (t: string) => {
@@ -79,6 +90,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
               const string = element.parentElement?.childNodes[0].textContent?.trim() ?? ""
               deleteTag(data?.id ?? 1, string)
                 .then(resp => {
+                  showStatus(resp);
                   if (!resp.ok) {
                     element.parentElement?.classList.remove("removing");
                   } else loadData();
@@ -176,13 +188,13 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
             </button>
             <button
               title="Get File"
-              onClick={() => { addFile(setTemplate, data); closeDetails(); }}>
+              onClick={() => { addFile(setTemplate, data).then(_ => closeDetails()) }}>
               <i className="fa-solid fa-plus"></i>
             </button>
             <button
               title="Like"
               className={data.liked ? 'template-liked' : ''}
-              onClick={e => { e.currentTarget.classList.toggle("template-liked"); likeRequest(templateUuid); }}>
+              onClick={e => { e.currentTarget.classList.toggle("template-liked"); likeRequest(templateUuid).then(resp => showStatus(resp)); }}>
               <i className="fa-solid fa-heart"></i>
             </button>
           </div>

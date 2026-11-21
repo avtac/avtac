@@ -1,5 +1,5 @@
 import { Grouping, Subregion } from "@avtac/ui/Layout";
-import { generateKey } from "./api";
+import { generateKey, showStatus } from "./api";
 import { useRef, useState, type RefObject } from "react";
 
 interface KeyMakerProps {
@@ -19,7 +19,7 @@ function KeyMaker({ exit }: KeyMakerProps) {
   function genKey() {
     setConfirmed(false)
     generateKey()
-      .then(resp => resp.text())
+      .then(resp => { showStatus(resp); return resp.text(); })
       .then(key => { if (ref.current) ref.current.innerText = key })
     if (ref.current) ref.current.innerText = "Generating Key"
   }

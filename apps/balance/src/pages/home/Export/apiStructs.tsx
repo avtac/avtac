@@ -30,7 +30,7 @@ export interface templatePropertiesT {
 
 const defaultProperties: templatePropertiesT = {
   fileName: "",
-  name: "",
+  name: "Not Found",
   description: "",
   size: "Letter",
   uses: "",
@@ -56,7 +56,7 @@ export interface fileDatabaseDataT {
 }
 
 const defaultDatabaseData: fileDatabaseDataT = {
-  name: "",
+  name: "Not Found",
   id: -1,
   uuid: "",
   version: -1,

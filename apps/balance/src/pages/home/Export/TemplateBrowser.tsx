@@ -156,7 +156,10 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
         onCancel={() => handleDetails("")}
         closedby='any'>
         <div id='templateDownloadDialog'>
-          <h2 style={{ marginLeft: "14px" }}>Template Browser</h2>
+          <div id='template-download-dialog-title-row'>
+            <h2>Template Browser</h2>
+            <div id='download-warning-message' className='warn'></div>
+          </div>
           <button command='close' commandfor='templateDownload' style={{ position: "absolute", top: "5px", right: "5px", fontSize: "1.2rem" }} className='fa-solid fa-x'></button>
           <div id='templateDownloadDialogTop'>
             {!showKeyGen && showInfo && <button onClick={() => handleDetails("")}><i className='fa-solid fa-arrow-left'></i></button>}

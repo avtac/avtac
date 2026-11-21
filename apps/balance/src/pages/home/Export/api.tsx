@@ -8,6 +8,19 @@ const baseURL = ''
 // API Fetch functions
 ///////////////////////////
 
+export async function showStatus(resp: Response) {
+  const warn = document.getElementById("download-warning-message");
+  if (resp.status < 500 && resp.status >= 400 && warn) {
+    const text = await resp.text()
+    warn.innerText = text;
+    setTimeout(() => warn.innerText = "", 4000)
+  }
+  if (resp.status >= 500 && warn) {
+    warn.innerText = "Can't connect to server";
+    setTimeout(() => warn.innerText = "", 4000)
+  }
+}
+
 export async function addFile(setTemplate: (arv0: string) => void, fileInfo: fileDatabaseDataT) {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
 
@@ -20,6 +33,7 @@ export async function addFile(setTemplate: (arv0: string) => void, fileInfo: fil
         "Authorization": `Bearer ${keyInput.value}`
       }
     })
+    showStatus(resp);
     const fileString = await resp.text()
 
     // Confirm the sent hash matches the content hash
@@ -75,6 +89,8 @@ export async function detailsRequest(uuid: string, version: number = -1): Promis
     }
   })
 
+  showStatus(resp);
+
   // Expects a json of fileDatabaseDataT
   return resp.json();
 }
@@ -109,6 +125,7 @@ export async function getListRequest(options: ListOptionsT): Promise<any> {
       "Authorization": `Bearer ${keyInput.value}`
     }
   });
+  showStatus(resp);
   const json = await resp.json();
   return json;
 }
