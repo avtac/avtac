@@ -83,6 +83,10 @@ const headBase = `
   <style>${graphStyle}</style>
   <style>${diagramStyle}</style>
   <style>
+    body {
+      width: fit-content;
+      margin: auto;
+    }
     #diagram #aircraft {
       fill: none !important;
       stroke: black !important;

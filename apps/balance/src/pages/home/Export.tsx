@@ -1,5 +1,5 @@
 import './Export.css'
-import { useMemo, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useMemo, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { type aircraftT, type loadingT, type nameProps } from "../../Types";
 import { validateAircraft } from '../../utility';
 import { UnitContext } from '../../UnitsContext';
@@ -131,14 +131,47 @@ function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: strin
   )
 }
 
-function CustomIframe({ ...props }) {
-  const [contentRef, setContentRef] = useState(null as (HTMLIFrameElement | null));
+function sanitizeTemplateHtml(html: string) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
 
-  const saveIframe = () => {
-    if (!contentRef || !contentRef.contentWindow) return;
-    contentRef.contentWindow.focus();
-    contentRef.contentWindow.print();
-  };
+  // Remove script elements (including sneaky ones inside svg/math)
+  doc.querySelectorAll("script").forEach((el) => el.remove());
+
+  // Remove meta elements that contain refresh
+  doc.querySelectorAll("meta").forEach((el) => { if (el.getAttribute("http-equiv") && el.getAttribute("http-equiv")?.toLowerCase() === "refresh") el.remove() });
+
+  // Remove inline event handlers (onclick=, onerror=, ...) — these don't
+  // cause warnings by themselves, but stripping them closes the door
+  doc.body.querySelectorAll("*").forEach((el) => {
+    [...el.attributes].forEach((attr) => {
+      if (/^on/i.test(attr.name)) el.removeAttribute(attr.name);
+    });
+  });
+
+  const meta = doc.createElement("meta");
+  meta.setAttribute("http-equiv", "Content-Security-Policy");
+  meta.setAttribute("content", "default-src 'none'; connect-src 'self'; style-src 'unsafe-inline' data:; script-src 'none'; font-src 'none'; form-action 'none'; base-uri 'none'; img-src 'none';");
+  doc.head.insertBefore(meta, doc.head.firstChild);
+
+  const meta2 = doc.createElement("meta");
+  meta2.setAttribute("http-equiv", "Referrer-Policy");
+  meta2.setAttribute("content", "no-referrer");
+  doc.head.insertBefore(meta2, doc.head.firstChild);
+
+  return "<!DOCTYPE html>" + doc.documentElement.outerHTML;
+}
+
+function openPrintTab(html: string) {
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const tab = window.open(url, '_blank');
+  if (!tab) return;
+  tab.print();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return tab;
+}
+
+function CustomIframe({ html }: { html: string }) {
 
   function fitToContainer() {
     const parent = document.getElementById("iframeHolder");
@@ -167,15 +200,9 @@ function CustomIframe({ ...props }) {
 
   return (
     <>
-      <Subregion id="iframeButton">
-        <button
-          id="exportButton"
-          onClick={() => saveIframe()}>Export Form</button>
-      </Subregion>
       <Subregion id="iframeHolder">
-        <div id="scaleHolder">
-          <iframe {...props} ref={setContentRef} sandbox='allow-modals allow-same-origin'></iframe>
-        </div>
+        <button onClick={() => openPrintTab(html)}>Export Form</button>
+        <iframe id='exportPreview' srcDoc={html} sandbox=''></iframe>
       </Subregion>
     </>
   )
@@ -189,7 +216,6 @@ interface exportProps {
 
 export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & nameProps): ReactNode {
   const units = useContext(UnitContext);
-  const ref: RefObject<(null | HTMLIFrameElement)> = useRef(null);
   const globalData = useRef(generateScopeData(aircraft, loading, selectedOpsConfig, units));
   const active: string = localStorage.getItem("activeTemplate") ?? "";
   const [activeTemplate, setTemplate] = useState(active);
@@ -216,7 +242,7 @@ export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & n
     globalData.current = generateScopeData(aircraft, loading, selectedOpsConfig, units);
     if (!globalData.current) return;
     globalData.current.user = userValues;
-    setIframeString(generateTemplate(globalData.current, temp));
+    setIframeString(sanitizeTemplateHtml(generateTemplate(globalData.current, temp)));
   }, [activeTemplate, loading, userValues]);
 
   return (
@@ -225,11 +251,7 @@ export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & n
 
       <ManualInputs activeTemplate={activeTemplate} setUserValues={setUserValuesSpecial} />
 
-      <CustomIframe
-        ref={ref}
-        id="exportPreview"
-        srcDoc={iframeString}
-      />
+      <CustomIframe html={iframeString} />
     </>
   );
 }

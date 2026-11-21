@@ -1,10 +1,3 @@
-#exportPreview {
-  height: 11in;
-  width: 8.5in;
-  margin: 0px auto;
-  border: unset;
-}
-
 #exportTitle {
   display: flex;
   justify-content: space-between;
@@ -49,17 +42,18 @@
 }
 
 #iframeHolder {
-  overflow-y: auto;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--margin-size);
 }
 
-#exportButton {
-  width: 100%;
+#exportPreview {
+  border: unset;
+  height: stretch;
 }
 
-#scaleHolder {
-  display: grid;
-  overflow: hidden;
-}
+/* Template browser */
 
 .template-liked {
   color: red;
