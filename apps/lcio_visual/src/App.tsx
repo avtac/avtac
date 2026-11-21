@@ -176,7 +176,7 @@ function App() {
   return (
     <>
       <Header title="LCIO Visualizer" />
-      <div id='body'>
+      <div id='content'>
         <Region id="overview">
           <div id="inputHolder">
             <textarea value={text} onChange={e => setText(e.target.value)} id="input"></textarea>

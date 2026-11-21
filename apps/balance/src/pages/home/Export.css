@@ -69,10 +69,6 @@
   color: indianred;
 }
 
-:has(iframe) {
-  color-scheme: light;
-}
-
 #templateDownloadDialog {
   display: flex;
   flex-direction: column;

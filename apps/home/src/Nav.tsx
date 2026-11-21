@@ -6,7 +6,7 @@ function Nav() {
   return (
     <>
       <Header title='AVTAC' />
-      <div id='body'>
+      <div id='content'>
         <Region id='left'>
           <Subregion id='links'>
             <a href={'/balance'}><button>Balance</button></a>

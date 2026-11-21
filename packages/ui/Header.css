@@ -2,7 +2,7 @@
   background: var(--header-bg);
   height: 75px;
   display: grid;
-  grid-template-columns: 9rem 20rem 9rem;
+  grid-template-columns: 12rem 20rem 12rem;
   justify-content: space-between;
   align-items: center;
 
@@ -20,6 +20,28 @@
       height: 44px;
       width: 44px;
       margin-right: 10px;
+    }
+  }
+
+  .active {
+    color: var(--text-i);
+    background-color: var(--invert-bg);
+  }
+
+  #header-left-holder {
+    display: flex;
+    justify-content: start;
+
+    #dark-mode-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      gap: 3px;
+
+      p {
+        border-radius: 50%;
+        padding: 4px;
+      }
     }
   }
 
