@@ -191,7 +191,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
           <div id='templateDownloadDialogMiddle'>
             {!showKeyGen && !showInfo && databaseData && blocks}
             {!showKeyGen && showInfo && <TemplateDetails setTemplate={setTemplate} closeDetails={() => handleDetails("")} templateUuid={showDetails} />}
-            {showKeyGen && <KeyMaker exit={() => setKeyGen(false)} />}
+            {showKeyGen && <KeyMaker authenticated={databaseData.authorized} exit={() => setKeyGen(false)} />}
           </div>
           <div id='templateDownloadDialogBottom'>
             <input style={{ width: "23rem" }} className={databaseData.authorized ? 'authorized' : ''} type='text' id='apiKeyInput' placeholder='Enter API Key' onBlur={refresh} />

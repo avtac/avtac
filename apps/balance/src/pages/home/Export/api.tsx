@@ -163,6 +163,17 @@ export function addTag(fileId: number, tag: string) {
   });
 }
 
+export function regenerateKey() {
+  const keyInput = document.getElementById('apiKeyInput') as HTMLInputElement;
+
+  return fetch(`${baseURL}/api/auth/generate`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${keyInput.value}`
+    },
+  });
+}
+
 export function generateKey() {
   return fetch(`${baseURL}/api/auth/generate`);
 }
