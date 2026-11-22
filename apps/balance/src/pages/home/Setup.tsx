@@ -207,6 +207,8 @@ function Setup({ config, setConfig, selectedAircraft, setSelectedAircraft, selec
     } else {
       setAvailableConfigList([]);
       setConfig({} as configT);
+      setSelectedAircraft("");
+      setSelectedOpsConfig("");
     }
   }
 

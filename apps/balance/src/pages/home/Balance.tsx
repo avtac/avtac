@@ -66,6 +66,22 @@ function Warning({ display, text }: warningProps): ReactNode {
   )
 }
 
+function generateOpsConfig(aircraft: aircraftT): boolean {
+  // If there are no ops configs, create an empty ops config for every aircraft config
+  if (aircraft.operationConfigs && aircraft.operationConfigs.length > 0) return false;
+  aircraft.operationConfigs = [];
+  for (const airConfig of aircraft.aircraftConfigs) {
+    aircraft.operationConfigs.push({
+      "id": crypto.randomUUID(),
+      "name": airConfig.name,
+      "config": airConfig.id,
+      "seats": [],
+      "cargoAreas": []
+    })
+  }
+  return true;
+}
+
 function Balance() {
   const defaultValue = {} as configT;
 
@@ -87,26 +103,26 @@ function Balance() {
   const [selectedAircraft, setSelectedAircraft] = useState(config.aircraft && config.aircraft.length > 0 ? config.aircraft[0].id : "")
   const aircraftIndex = config.aircraft && config.aircraft.findIndex(a => a.id === selectedAircraft);
 
+  if (aircraftIndex >= 0) {
+    generateOpsConfig(config.aircraft[aircraftIndex]);
+  }
+
   const [selectedOpsConfig, setSelectedOpsConfig] = useState(aircraftIndex >= 0 && config.aircraft[aircraftIndex].operationConfigs.length > 0 ? config.aircraft[aircraftIndex].operationConfigs[0].id : "")
   const [selectedConfig, setSelectedConfig] = useState(aircraftIndex >= 0 && config.aircraft[aircraftIndex].operationConfigs.length > 0 ? config.aircraft[aircraftIndex].operationConfigs[0].config : "");
   const [selectedPanel, setSelectedPanel] = useState(0);
 
   const [loadingData, setLoadingData] = useState(defaultLoading);
 
-  useMemo(() => {
-    if (config.aircraft && config.aircraft.findIndex(a => a.id === selectedAircraft) < 0)
-      setSelectedAircraftSpecial(config.aircraft[0].id);
-    else return;
-  }, [config])
-
   function setSelectedAircraftSpecial(aircraftId: string): void {
     if (aircraftId === selectedAircraft) return;
-    setSelectedAircraft(aircraftId);
 
     const selectedAircraftIndex = config.aircraft.findIndex(a => a.id === aircraftId);
     if (selectedAircraftIndex < 0) return;
     const aircraft = config.aircraft[selectedAircraftIndex];
 
+    generateOpsConfig(aircraft);
+
+    setSelectedAircraft(aircraftId);
     setSelectedOpsConfig(aircraft.operationConfigs.length > 0 ? aircraft.operationConfigs[0].id : "");
     setSelectedConfig(aircraft.aircraftConfigs.length > 0 ? aircraft.operationConfigs[0].config : "");
   }
@@ -127,6 +143,9 @@ function Balance() {
   function setConfigSpecial(value: configT): void {
     localStorage.setItem(activeConfigData, JSON.stringify(value));
     setConfig(value);
+    setSelectedAircraft("");
+    setSelectedOpsConfig("");
+    setSelectedConfig("");
   }
 
   function setAircraftSpecial(value: aircraftT): void {
@@ -135,6 +154,11 @@ function Balance() {
     localStorage.setItem(activeConfigData, JSON.stringify(tmp));
     setConfig(tmp);
   }
+
+  useMemo(() => {
+    if (config.aircraft && config.aircraft.findIndex(a => a.id === selectedAircraft) < 0)
+      setSelectedAircraftSpecial(config.aircraft[0].id);
+  }, [config])
 
   useMemo(() => {
     if (selectedPanel === 4) {
@@ -169,7 +193,7 @@ function Balance() {
                 selectedOpsConfig={selectedOpsConfig}
                 setSelectedOpsConfig={setSelectedOpsConfigSpecial} />
               <Config
-                name={"Config"}
+                name={"Ops Config"}
                 aircraft={config.aircraft && config.aircraft[aircraftIndex]}
                 setAircraft={setAircraftSpecial}
                 loading={loadingData}

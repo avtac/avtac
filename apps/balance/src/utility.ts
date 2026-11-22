@@ -1,4 +1,4 @@
-import { fuelUnits, lengthUnits, weightUnits, type aircraftLimitsT, type aircraftPropertiesT, type aircraftT, type cargoAreaT, type configT, type fuelLoadT, type fuelTankT, type loadingT, type maxMomentObjectT, type momentObjectT, type regionT, type seatT, type setupT, type weightLimitT, type equipmentT, type aircraftConfigT } from './Types';
+import { fuelUnits, lengthUnits, weightUnits, type aircraftLimitsT, type aircraftPropertiesT, type aircraftT, type cargoAreaT, type configT, type fuelLoadT, type fuelTankT, type loadingT, type maxMomentObjectT, type momentObjectT, type regionT, type seatT, type setupT, type weightLimitT, type equipmentT, type aircraftConfigT, type operationConfigT } from './Types';
 
 export const activeConfigBuilder = "activeConfigBuilder"
 export const savedBuilderConfigs = "savedBuilderConfigs"
@@ -345,6 +345,32 @@ export const saveStringToFile = (content: string, filename: string) => {
   URL.revokeObjectURL(url);
 };
 
+function validateOperationConfig(opsConfig: operationConfigT, aircraftConfigs: string[]) {
+  if (opsConfig === null) return "Bad ops config";
+  if (typeof opsConfig !== 'object') return "Bad operation config";
+  if (!Object.hasOwn(opsConfig, 'name')) return "Operation config missing 'name' property";
+  if (typeof opsConfig.name !== 'string') return "Operation config 'name' property is incorrect type"
+  if (!Object.hasOwn(opsConfig, 'config')) return "Operation config missing 'config' property";
+  if (typeof opsConfig.config !== 'string') return "Operation config 'config' property is incorrect type"
+  if (!aircraftConfigs.includes(opsConfig.config)) return "Operation config 'config' is not a valid id"
+  if (!Object.hasOwn(opsConfig, 'seats')) return "Operation config missing 'seats' property";
+  if (Array.isArray(opsConfig.seats)) {
+    for (const seat of opsConfig.seats) {
+      if (typeof seat !== 'object') return "Operation config seats 'seat' property is incorrect type"
+      if (!Object.hasOwn(seat, 'weight')) return "Operation config seat missing 'weight' property";
+      if (typeof seat.weight !== 'number') return "Operation config seat 'weight' property is incorrect type"
+    }
+  }
+  if (!Object.hasOwn(opsConfig, 'cargoAreas')) return "Operation config missing 'cargoAreas' property";
+  if (Array.isArray(opsConfig.cargoAreas)) {
+    for (const cargoArea of opsConfig.cargoAreas) {
+      if (typeof cargoArea !== 'object') return "Operation config cargoAreas 'cargoArea' property is incorrect type"
+      if (!Object.hasOwn(cargoArea, 'weight')) return "Operation config cargoArea missing 'weight' property";
+      if (typeof cargoArea.weight !== 'number') return "Operation config cargoArea 'weight' property is incorrect type"
+    }
+  }
+}
+
 function validateAircraftConfig(aircraftConfig: aircraftConfigT) {
   if (aircraftConfig === null) return "Bad aircraft config";
   if (typeof aircraftConfig !== 'object') return "Bad aircraft config";
@@ -356,11 +382,13 @@ function validateAircraftConfig(aircraftConfig: aircraftConfigT) {
       if (typeof seat !== 'string') return "Aircraft config seats 'seat' property is incorrect type"
     }
   }
+  if (!Object.hasOwn(aircraftConfig, 'cargoAreas')) return "Aircraft config missing 'cargoAreas' property";
   if (Array.isArray(aircraftConfig.cargoAreas)) {
     for (const cargoArea of aircraftConfig.cargoAreas) {
       if (typeof cargoArea !== 'string') return "Aircraft config cargoAreas 'cargoArea' property is incorrect type"
     }
   }
+  if (!Object.hasOwn(aircraftConfig, 'fuelTanks')) return "Aircraft config missing 'fuelTanks' property";
   if (Array.isArray(aircraftConfig.fuelTanks)) {
     for (const fuelTank of aircraftConfig.fuelTanks) {
       if (typeof fuelTank !== 'string') return "Aircraft config cargoAreas 'fuelTank' property is incorrect type"
@@ -521,13 +549,20 @@ export function validateAircraft(aircraft: aircraftT): (string | false) {
   }
 
   if (!Object.hasOwn(aircraft, 'aircraftConfigs')) return "Aircraft missing 'aircraftConfigs' property";
+  const aircraftConfigs: string[] = [];
   for (const aircraftConfig of aircraft.aircraftConfigs) {
     const configValid = validateAircraftConfig(aircraftConfig);
     if (configValid) return configValid;
+    aircraftConfigs.push(aircraftConfig.id);
   }
 
-  if (!Object.hasOwn(aircraft, 'operationConfigs')) return "Aircraft missing 'operationConfigs' property";
-  if (!Array.isArray(aircraft.operationConfigs)) return "Aircraft 'operationConfigs' property is incorrect type";
+  if (Object.hasOwn(aircraft, 'operationConfigs')) {
+    if (!Array.isArray(aircraft.operationConfigs)) return "Aircraft 'operationConfigs' property is incorrect type";
+    for (const opsConfig of aircraft.operationConfigs) {
+      const opsValid = validateOperationConfig(opsConfig, aircraftConfigs);
+      if (opsValid) return opsValid
+    }
+  }
   return false;
 }
 

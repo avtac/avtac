@@ -117,7 +117,6 @@ Select the desired aircraft config to use and name the operation config.
 You can have multiple operation configs with the same aircraft config for different crew compliments or crew baggage.
 
 > [!Important]
-> If you do not plan to load any operation configs, it is still necessary to create an empty
-> operation config for each aircraft config. Just leave everything deselected and name them the
-> same name as the aircraft config.
+> If you do not plan to load any operation configs, it is possible to not create any
+> and Balance will just create configurations based on the aircraft configurations
 
