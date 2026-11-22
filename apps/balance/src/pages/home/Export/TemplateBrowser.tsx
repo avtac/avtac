@@ -92,7 +92,6 @@ interface templateBrowserProps {
 
 function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
   const ownedRef: RefObject<(null | HTMLInputElement)> = useRef(null);
-  const isMounted = useRef(false);
   const [isPending, startTransition] = useTransition()
   const [databaseData, setDatabaseData] = useState(defaultFileDatabaseList());
   const [offset, setOffset] = useState(0);
@@ -131,8 +130,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
   };
 
   useEffect(() => {
-    if (isMounted.current) refresh();
-    else isMounted.current = true;
+    refresh();
   }, [offset]);
 
   function handleDetails(uuid: string) {
@@ -143,7 +141,7 @@ function TemplateBrowser({ setTemplate }: templateBrowserProps): ReactNode {
     }
   }
 
-  const blocks = databaseData.data ? databaseData.data.map(v => <TemplateListItem data={v} handleDetails={handleDetails} refresh={refresh} />) : <></>;
+  const blocks = databaseData.data ? databaseData.data.map(v => <TemplateListItem key={v.uuid} data={v} handleDetails={handleDetails} refresh={refresh} />) : <></>;
 
   const sortOptions = ["Likes", "Downloads", "Age"].map(v => <option key={v} value={v.toLowerCase()}>{v}</option>)
   const showInfo = uuidValidate(showDetails);
