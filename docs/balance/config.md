@@ -6,9 +6,9 @@ The config file is saved in json format and contains all information for calcula
 
 ## Editing
 
-For most users the actual file will be either created or retrieved from someone else never actually interacting with the underlying json.
+For most users the actual file will be either generated or retrieved from someone else never actually interacting with the underlying json.
 It is still good to know some of the basics on how the config file works when editing in the app.
-For a detailed description of the json format check out the [spec](config-spec.md)
+For a detailed description of the json format check out the [spec](config-spec.md).
 
 ### Setup
 Each file will have a name and some specified setup settings for the entire file.
@@ -19,10 +19,10 @@ The name is fixed but the units can be adjusted by the user after loading, thoug
 Everything else is unique to each aircraft.
 Aircraft are named using their tail number and type (\[type\]: \[tail number\]).
 
-> [!Note] There is no requirement for unique aircraft names, though it would be difficult to differentiate between them.
+> [!Note]
+> There is no requirement for unique aircraft names, though it would be difficult to differentiate between them.
 
-Empty weight and empty arm are required to enter as they are the base of all other calculations.
-(Enter the values using the units displayed, all values are converted in config file to inches and pounds)
+Empty weight and empty arm are required to be entered as they are the base of all other calculations.
 
 ### Limits
 
@@ -36,7 +36,7 @@ Regions are defined by a series of weight, arm pairs with no limit on the number
 
 ### Seats/Cargo Areas
 
-Seats and cargo areas are vary similar only differing in 2 factors.
+Seats and cargo areas are very similar only differing in 2 places.
 Seats are assumed to only hold 1 person of up to the max weight for that seat and seats have the ability to be offset laterally in the plane (this is not used for W&B calculations).
 Cargo areas are simply just a specific arm where weight can be loaded up to the max weight.
 
@@ -44,7 +44,7 @@ In the most general sense, passengers are the people (person, clothes, carry-ons
 
 > [!Note]
 > Seats and cargo areas are just the location where something can go, not the actual seat.
-> Seats should be considered as equipment that can be added/removed depending on config separate from the seat positions described above.
+> The physical seats should be considered as equipment that can be added/removed depending on config separate from the seat positions described above.
 
 ### Fuel
 
@@ -59,9 +59,9 @@ When loading fuel the reverse happens.
 The lowest priority fills first until full then the next level fills.
 All tanks of the same priority fill until all tanks are full before the next higher priority tanks get fuel.
 
-> [!Example]
-> There are two fuel tank groups, one, the wing tanks, and the other, a removable tank in the back of the plane.
-> And lets say that the removable tank is burned first before touching the wing tanks.
+> [!Tip]
+> There are two fuel tank groups, one the wing tanks, and the other a removable tank in the back of the plane.
+> Let's say that the removable tank is burned first before touching the wing tanks.
 > This would mean the wing tank has a lower priority than removable tank (the removable tank would also have removable selected).
 
 Making a tank removable makes it possible to have multiple configs for the same aircraft with different fuel limits.
@@ -90,7 +90,7 @@ Define everything that could possibly be present and then select what is actuall
 
 ### Configs
 
-Configs can be thought of building the aircraft.
+Configs can be thought of as the layout of the aircraft.
 Everything up to this point was defining what could go on the aircraft and where.
 Now, you can start building the plane, first by selecting the available seats and cargo areas, fuel tanks, and all present equipment.
 
@@ -105,8 +105,4 @@ Below are just a few ideas for different configs
 
 The final step, and what is used for the actual weight and balance calculations, ops configs are simply a specific config with predefined crew and cargo unrelated to passengers and transported cargo.
 Here you define where the crew will sit and how much cargo they have to create a baseline weight and balance that is then added to with any loaded passengers, cargo, and fuel.
-
-> [!Note]
-> After creating the configs, you must at least create empty ops configs with each config.
-> Ops configs are what are used in the main balance app.
 
