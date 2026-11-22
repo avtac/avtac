@@ -233,7 +233,7 @@ function PlotLimit({ data, limits, options }: plotLimitProps): ReactNode {
             </text>
             {v.name.split(';').map((name: string, j: number) => {
               return <text
-                key={v.id + "-weight"}
+                key={v.id + "-weight-" + j}
                 x={x2 + 1}
                 y={topY + (j + 1) * charSize + gapSize}
                 alignmentBaseline='after-edge'
