@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import '@avtac/ui/colors.css'
 import '@avtac/ui/global.css'
 import Nav from './Nav.tsx'
 
