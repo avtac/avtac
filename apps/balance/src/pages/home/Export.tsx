@@ -94,7 +94,7 @@ function ExportHeader({ setTemplate, activeTemplate }: { setTemplate: (arg: stri
   )
 }
 
-function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: string, setUserValues: (arg0: string, arg1: string) => void }): ReactNode {
+function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: string, setUserValues: (name: string, value: (string | number | undefined)) => void }): ReactNode {
   const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
   const temp = templates.find(f => f.id === activeTemplate);
   if (!temp || !temp.data.properties.inputs) return <></>
@@ -115,6 +115,7 @@ function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: strin
                 <select
                   className="manualInput"
                   id={input.name + "-manual-input"}
+                  defaultValue={input.default}
                   onChange={(e) => setUserValues(input.name, e.target.value)} >
                   {input.options?.map(o => <option key={o} value={o}>{o}</option>)})
                 </select>
@@ -123,6 +124,7 @@ function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: strin
                   className="manualInput"
                   id={input.name + "-manual-input"}
                   type={input.type}
+                  defaultValue={input.default}
                   placeholder={input.label}
                   onChange={(e) => setUserValues(input.name, e.target.value)} />
               }
@@ -260,11 +262,27 @@ export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & n
     setTemplate(tempId);
   }
 
-  function setUserValuesSpecial(name: string, value: string) {
+  function setUserValuesSpecial(name: string, value: (string | number | undefined)) {
     const tmp = JSON.parse(JSON.stringify(userValues));
     tmp[name] = value;
     setUserValues(tmp);
   }
+
+  useMemo(() => {
+    const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");
+    const temp = templates.find(f => f.id === activeTemplate);
+    if (!temp) return;
+
+    const tmp: Record<string, string> = {};
+    temp.data.properties.inputs.forEach(i => {
+      if (i?.default)
+        tmp[i.name] = String(i.default)
+      else if (i?.type === 'select' && i.options && i.options.length > 0)
+        tmp[i.name] = String(i.options[0])
+    });
+
+    setUserValues(tmp);
+  }, [activeTemplate])
 
   useMemo(() => {
     const templates: templateT[] = JSON.parse(localStorage.getItem("savedTemplates") ?? "[]");

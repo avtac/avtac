@@ -187,7 +187,7 @@ function TemplateDetails({ closeDetails, setTemplate, templateUuid }: TemplateDe
               <i className="fa-solid fa-file-arrow-down"></i>
             </button>
             <button
-              title="Get File"
+              title="Add File"
               onClick={() => { addFile(setTemplate, data).then(_ => closeDetails()) }}>
               <i className="fa-solid fa-plus"></i>
             </button>
