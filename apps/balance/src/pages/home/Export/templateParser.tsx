@@ -9,11 +9,22 @@ import Diagram from '../../../Diagram';
 import dayjs from 'dayjs';
 import type { templateT } from './apiStructs'
 
+interface positionT {
+  name: string;
+  count: number;
+  weight: number;
+  arm: number;
+}
+
 interface globalsT {
   user: Record<string, string>;
   units: setupT;
   graph: (options: graphOptionsT) => ReactNode;
   diagram: string;
+
+  filledSeats: positionT[]
+  filledCargo: positionT[]
+  activeEquipment: positionT[]
 
   mac: number;
   leadingMAC: number;
@@ -114,6 +125,51 @@ export function generateScopeData(aircraft: aircraftT, loading: loadingT, select
   takeoffWeight = roundNumber(convertWeightUnit(takeoffWeight, baseWeightUnit, units.weightUnits), unitPrecision);
   takeoffArm = roundNumber(convertLengthUnit(takeoffArm, baseLengthUnit, units.lengthUnits), unitPrecision);
 
+  const filledSeats: positionT[] = loading.passengers.reduce<positionT[]>((ret, pax) => {
+    if (pax.count > 0) {
+      const seat = aircraft.seats.find(s => s.id === pax.location);
+      if (!seat) return ret;
+      const val = {
+        weight: pax.count * roundNumber(convertWeightUnit(pax.avgWeight, baseWeightUnit, units.weightUnits), unitPrecision),
+        arm: roundNumber(convertLengthUnit(seat.arm, baseLengthUnit, units.lengthUnits), unitPrecision),
+        name: seat.name,
+        count: pax.count
+      };
+      return [...ret, val];
+    }
+    return ret;
+  }, []);
+
+  const filledCargo: positionT[] = loading.cargo.reduce<positionT[]>((ret, cargo) => {
+    if (cargo.weight > 0) {
+      const cargoLoc = aircraft.cargoAreas.find(s => s.id === cargo.location);
+      if (!cargoLoc) return ret;
+      const val = {
+        weight: roundNumber(convertWeightUnit(cargo.weight, baseWeightUnit, units.weightUnits), unitPrecision),
+        arm: roundNumber(convertLengthUnit(cargoLoc.arm, baseLengthUnit, units.lengthUnits), unitPrecision),
+        name: cargoLoc.name,
+        count: -1
+      };
+      return [...ret, val];
+    }
+    return ret;
+  }, []);
+
+  const activeEquipment: positionT[] = aircraft.aircraftConfigs[configIndex].equipment.reduce<positionT[]>((ret, equip) => {
+    if (equip.count > 0) {
+      const equipLoc = aircraft.equipment.find(s => s.id === equip.id);
+      if (!equipLoc) return ret;
+      const val = {
+        weight: equip.count * roundNumber(convertWeightUnit(equipLoc.weight, baseWeightUnit, units.weightUnits), unitPrecision),
+        arm: roundNumber(convertLengthUnit(equipLoc.arm, baseLengthUnit, units.lengthUnits), unitPrecision),
+        name: equipLoc.name,
+        count: equip.count
+      };
+      return [...ret, val];
+    }
+    return ret;
+  }, []);
+
   const numCrew = aircraft.operationConfigs[opsConfigIndex].seats.reduce((sum, p) => sum + Math.ceil(p.weight / 200), 0);
 
   const crewWeight = roundNumber(convertWeightUnit(aircraft.operationConfigs[opsConfigIndex].seats.reduce((sum, p) => sum + p.weight, 0), baseWeightUnit, units.weightUnits), unitPrecision);
@@ -199,6 +255,10 @@ export function generateScopeData(aircraft: aircraftT, loading: loadingT, select
     units: units,
     graph: graph,
     diagram: renderToString(diagram),
+
+    filledSeats: filledSeats,
+    filledCargo: filledCargo,
+    activeEquipment: activeEquipment,
 
     mac: mac,
     leadingMAC: leadingEdgeMAC,
