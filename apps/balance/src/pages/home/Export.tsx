@@ -1,5 +1,8 @@
 import './Export.css'
-import { useMemo, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import diagramStyle from '../../Diagram.css?inline'
+import graphStyle from '../../Graph.css?inline'
+import colorStyle from '@avtac/ui/colors.css?inline'
+import { useMemo, useContext, useEffect, useState, type ReactNode } from "react";
 import { type aircraftT, type loadingT, type nameProps } from "../../Types";
 import { validateAircraft } from '../../utility';
 import { UnitContext } from '../../UnitsContext';
@@ -131,6 +134,32 @@ function ManualInputs({ activeTemplate, setUserValues }: { activeTemplate: strin
   )
 }
 
+const styleBase = `
+${colorStyle}
+${graphStyle}
+${diagramStyle}
+  :root {
+    background-color: grey;
+    margin: auto;
+    width: fit-content;
+    display: grid;
+  }
+  @media screen {
+    :root {
+      padding: 1rem;
+    }
+  }
+  body {
+    box-sizing: border-box;
+    background-color: white;
+  }
+  #diagram #aircraft {
+    fill: none !important;
+    stroke: black !important;
+    stroke-width: .5% !important;
+  }
+`
+
 function sanitizeTemplateHtml(html: string) {
   const doc = new DOMParser().parseFromString(html, "text/html");
 
@@ -157,6 +186,10 @@ function sanitizeTemplateHtml(html: string) {
   meta2.setAttribute("http-equiv", "Referrer-Policy");
   meta2.setAttribute("content", "no-referrer");
   doc.head.insertBefore(meta2, doc.head.firstChild);
+
+  const style = doc.createElement("style");
+  style.innerHTML = styleBase;
+  doc.head.appendChild(style);
 
   return "<!DOCTYPE html>" + doc.documentElement.outerHTML;
 }
@@ -216,7 +249,6 @@ interface exportProps {
 
 export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & nameProps): ReactNode {
   const units = useContext(UnitContext);
-  const globalData = useRef(generateScopeData(aircraft, loading, selectedOpsConfig, units));
   const active: string = localStorage.getItem("activeTemplate") ?? "";
   const [activeTemplate, setTemplate] = useState(active);
   const [userValues, setUserValues] = useState<Record<string, string>>({});
@@ -239,10 +271,9 @@ export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & n
     const temp = templates.find(f => f.id === activeTemplate);
     if (!temp) return;
 
-    globalData.current = generateScopeData(aircraft, loading, selectedOpsConfig, units);
-    if (!globalData.current) return;
-    globalData.current.user = userValues;
-    setIframeString(sanitizeTemplateHtml(generateTemplate(globalData.current, temp)));
+    const globalData = generateScopeData(aircraft, loading, selectedOpsConfig, units, userValues);
+    if (!globalData) return;
+    setIframeString(sanitizeTemplateHtml(generateTemplate(globalData, temp)));
   }, [activeTemplate, loading, userValues]);
 
   return (

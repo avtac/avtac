@@ -1,6 +1,3 @@
-import mainStyle from '@avtac/ui/global.css?inline'
-import diagramStyle from '../../../Diagram.css?inline'
-import graphStyle from '../../../Graph.css?inline'
 import Handlebars from "handlebars"
 import { type ReactNode } from "react";
 import { renderToString } from 'react-dom/server';
@@ -14,7 +11,6 @@ import type { templateT } from './apiStructs'
 
 interface globalsT {
   user: Record<string, string>;
-  defaultStyles: string;
   units: setupT;
   graph: (options: graphOptionsT) => ReactNode;
   diagram: string;
@@ -76,36 +72,7 @@ interface globalsT {
   convertFuel: (length: number, fromUnit: fuelUnitsT) => number;
 }
 
-// Add general style to all templates
-const headBase = `
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <style>${mainStyle}</style>
-  <style>${graphStyle}</style>
-  <style>${diagramStyle}</style>
-  <style>
-    :root {
-      background-color: grey;
-      margin: auto;
-      width: fit-content;
-      display: grid;
-    }
-    @media screen {
-      :root {
-        padding: 1rem;
-      }
-    }
-    body {
-      box-sizing: border-box;
-      background-color: white;
-    }
-    #diagram #aircraft {
-      fill: none !important;
-      stroke: black !important;
-      stroke-width: .5% !important;
-    }
-  </style>
-`
-export function generateScopeData(aircraft: aircraftT, loading: loadingT, selectedOpsConfig: string, units: setupT): (globalsT | undefined) {
+export function generateScopeData(aircraft: aircraftT, loading: loadingT, selectedOpsConfig: string, units: setupT, userData: Record<string, string>): (globalsT | undefined) {
   if (validateAircraft(aircraft)) return undefined;
   const opsConfigIndex = aircraft.operationConfigs.findIndex(c => c.id === selectedOpsConfig);
   if (opsConfigIndex < 0) return undefined;
@@ -227,8 +194,7 @@ export function generateScopeData(aircraft: aircraftT, loading: loadingT, select
   const convertFuel = (fuel: number, fromUnit: fuelUnitsT) => convertFuelUnits(fuel, fromUnit, units.fuelUnits, units.fuelDensity);
 
   const globalData: globalsT = {
-    user: {},
-    defaultStyles: headBase,
+    user: userData,
     units: units,
     graph: graph,
     diagram: renderToString(diagram),
@@ -316,13 +282,13 @@ Handlebars.registerHelper("lessThan", (a: number, b: number) => a < b);
 Handlebars.registerHelper("greaterThan", (a: number, b: number) => a > b);
 Handlebars.registerHelper("lessThanEqual", (a: number, b: number) => a <= b);
 Handlebars.registerHelper("greaterThanEqual", (a: number, b: number) => a >= b);
+Handlebars.registerHelper("date", (format: string) => dayjs().format(format));
+Handlebars.registerHelper("round", (n: number, precision: number) => roundNumber(n, precision));
 
 export function generateTemplate(globalData: globalsT, template: templateT): string {
   const T = Handlebars.compile(template.body);
 
   Handlebars.registerHelper("graph", (options: graphOptionsT) => renderToString(globalData.graph(options)));
-  Handlebars.registerHelper("date", (format: string) => dayjs().format(format));
-  Handlebars.registerHelper("round", (n: number, precision: number) => roundNumber(n, precision));
   Handlebars.registerHelper("getMac", (arm: number) => globalData.getMac(arm));
   Handlebars.registerHelper("getSeatPassengers", (name: string) => globalData.getSeatPassengers(name));
   Handlebars.registerHelper("getSeatWeight", (name: string) => globalData.getSeatWeight(name));
