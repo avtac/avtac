@@ -273,15 +273,17 @@ export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & n
     const temp = templates.find(f => f.id === activeTemplate);
     if (!temp) return;
 
-    const tmp: Record<string, string> = {};
-    temp.data.properties.inputs.forEach(i => {
-      if (i?.default)
-        tmp[i.name] = String(i.default)
-      else if (i?.type === 'select' && i.options && i.options.length > 0)
-        tmp[i.name] = String(i.options[0])
-    });
+    if (temp.data.properties.inputs) {
+      const tmp: Record<string, string> = {};
+      temp.data.properties.inputs.forEach(i => {
+        if (i?.default)
+          tmp[i.name] = String(i.default)
+        else if (i?.type === 'select' && i.options && i.options.length > 0)
+          tmp[i.name] = String(i.options[0])
+      });
+      setUserValues(tmp);
+    }
 
-    setUserValues(tmp);
   }, [activeTemplate])
 
   useMemo(() => {

@@ -95,8 +95,9 @@ export function generateScopeData(aircraft: aircraftT, loading: loadingT, select
   const aircraftTailNumber = aircraft.properties.tailNumber;
   const aircraftConfig = aircraft.operationConfigs[opsConfigIndex].name;
 
-  const emptyWeight = roundNumber(convertWeightUnit(aircraft.properties.emptyWeight, baseWeightUnit, units.weightUnits), unitPrecision);
-  const emptyArm = roundNumber(convertLengthUnit(aircraft.properties.emptyArm, baseLengthUnit, units.lengthUnits), unitPrecision);
+  let [emptyWeight, emptyArm] = calculateEmptyBalanceForConfig(aircraft, aircraft.operationConfigs[opsConfigIndex].config);
+  emptyWeight = roundNumber(convertWeightUnit(emptyWeight, baseWeightUnit, units.weightUnits), unitPrecision);
+  emptyArm = roundNumber(convertLengthUnit(emptyArm, baseLengthUnit, units.lengthUnits), unitPrecision);
   let [configWeight, configArm] = calculateEmptyBalanceForConfig(aircraft, aircraft.operationConfigs[opsConfigIndex].config)
   configWeight = roundNumber(convertWeightUnit(configWeight, baseWeightUnit, units.weightUnits), unitPrecision);
   configArm = roundNumber(convertLengthUnit(configArm, baseLengthUnit, units.lengthUnits), unitPrecision);
