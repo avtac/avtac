@@ -143,9 +143,11 @@ function Balance() {
   function setConfigSpecial(value: configT): void {
     localStorage.setItem(activeConfigData, JSON.stringify(value));
     setConfig(value);
-    setSelectedAircraft("");
-    setSelectedOpsConfig("");
-    setSelectedConfig("");
+    if (value.id != config.id) {
+      setSelectedAircraft("");
+      setSelectedOpsConfig("");
+      setSelectedConfig("");
+    }
   }
 
   function setAircraftSpecial(value: aircraftT): void {
