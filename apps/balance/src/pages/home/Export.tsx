@@ -71,7 +71,7 @@ function ExportHeader({ setTemplate, activeTemplate }: { setTemplate: (arg: stri
 
   return (
     <Subregion id='exportTitle'>
-      <div>
+      <div id='exportSelectHolder'>
         <h3>Export</h3>
         <select
           id="templateSelect"
@@ -80,15 +80,24 @@ function ExportHeader({ setTemplate, activeTemplate }: { setTemplate: (arg: stri
             setTemplate(e.target.value);
           }}>{options}</select>
       </div>
+      {showDialog && <TemplateBrowser setTemplate={setTemplate} />}
       <div id='exportButtonHolder'>
-        {showDialog && <TemplateBrowser setTemplate={setTemplate} />}
-        <button onClick={() => { setShowDialog(true) }} command="show-modal" commandfor="templateDownload">Browse Templates</button>
         <button
+          title="Browse Templates"
+          className='fa-solid fa-magnifying-glass'
+          onClick={() => { setShowDialog(true) }}
+          command="show-modal"
+          commandfor="templateDownload"></button>
+        <button
+          title="Load Template"
+          className="fa-solid fa-file-arrow-up"
           id="openFile"
-          onClick={openFile}>Upload Template</button>
+          onClick={openFile}></button>
         <button
+          title="Delete Template"
+          className="fa-solid fa-trash"
           id="deleteButton"
-          onClick={deleteButton}>Delete Template</button>
+          onClick={deleteButton}></button>
       </div>
     </Subregion>
   )
