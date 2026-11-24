@@ -291,9 +291,18 @@ export function Export({ loading, aircraft, selectedOpsConfig }: exportProps & n
     const temp = templates.find(f => f.id === activeTemplate);
     if (!temp) return;
 
-    const globalData = generateScopeData(aircraft, loading, selectedOpsConfig, units, userValues);
-    if (!globalData) return;
-    setIframeString(sanitizeTemplateHtml(generateTemplate(globalData, temp)));
+    try {
+      const globalData = generateScopeData(aircraft, loading, selectedOpsConfig, units, userValues);
+      if (!globalData) return;
+      setIframeString(sanitizeTemplateHtml(generateTemplate(globalData, temp)));
+    } catch (error) {
+      setIframeString(`
+        <body>
+          <h1>Failed to render template</h1>
+          <h3>${error}</h3>
+        </body>
+      `);
+    }
   }, [activeTemplate, loading, userValues]);
 
   return (
