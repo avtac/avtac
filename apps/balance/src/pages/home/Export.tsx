@@ -160,6 +160,10 @@ ${diagramStyle}
     stroke: black !important;
     stroke-width: .5% !important;
   }
+  #diagram {
+    max-height: 10rem;
+  }
+
 `
 
 function sanitizeTemplateHtml(html: string) {

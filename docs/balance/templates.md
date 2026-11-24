@@ -148,6 +148,54 @@ They are accessed by the tag name.
 | landingFuelWeight | number |
 | landingFuelArm | number |
 
+#### Arrays
+
+There are a few arrays that provide access to aircraft specific names.
+Each array is a list of names sorted by their position arm.
+The arrays are most useful when combined with handlebars `each` function.
+
+
+| tag | type |
+| ------------- | ---------- |
+| seatNames | string[] |
+| cargoAreaNames | string[] |
+| equipmentNames | string[] |
+
+
+The example below shows one possible use of the arrays.
+For more a detailed guide on how to use the handlebars `each` function visit their [wiki](https://handlebarsjs.com/guide/builtin-helpers.html#each)
+
+This will create a table of displaying information for each seat. Using
+the `if` to check if the seat is occupied it is filtered to only display
+occupied seat.
+
+``` html
+<h4>Seats</h4>
+<table class="list">
+  <colgroup>
+    <col style="width: 6rem;">
+    <col style="width: 1rem;">
+    <col style="width: 3rem;">
+    <col style="width: 3rem;">
+  </colgroup>
+  <tr>
+    <th>Name</th>
+    <th>Souls</th>
+    <th>Weight</th>
+    <th>Arm</th>
+  </tr>
+  {{#each seatNames}}
+    {{#if (getSeatSouls this)}}
+    <tr>
+      <td>{{this}}</td>
+      <td>{{round (getSeatSouls this) 1}}</td>
+      <td>{{round (getSeatWeight this) 1}}{{../units.weightUnits}}</td>
+      <td>{{round (getSeatArm this) 1}}{{../units.lengthUnits}}</td>
+    </tr>
+    {{/if}}
+  {{/each}}
+</table>
+```
 
 #### Units
 
@@ -205,16 +253,21 @@ current aircraft state. Something like `getMac` returns the MAC percentage for a
 | tag | parameters | return |
 | -------- | --------- | -------- |
 | getMac | arm: number | mac: number |
-| getSeatPassengers | name: string | count: number |
+| getSeatSouls | name: string | count: number |
 | getSeatWeight | name: string | weight: number |
 | getSeatArm | name: string | arm: number |
+| getSeatPassengers | name: string | count: number |
+| getSeatPassengerWeight | name: string | weight: number |
 | getCargoWeight | name: string | weight: number |
 | getCargoArm | name: string | arm: number |
+| getEquipmentCount | name: string | count: number |
+| getEquipmentWeight | name: string | weight: number |
+| getEquipmentArm | name: string | arm: number |
 | getLimit | name: string | weight: number |
 | withinRegionL | name: string, weight: number, arm: number | inside: boolean |
 | convertWeight | weight: number, unit: string) | weight: number |
 | convertLength | length: number, unit: string) | length: number |
-| convertFuel | fuel: number, unit: fuelUnitsT) | fuel: number |
+| convertFuel | fuel: number, unit: string | fuel: number |
 
 ##### Helper Functions
 
