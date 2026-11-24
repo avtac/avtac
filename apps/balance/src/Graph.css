@@ -1,12 +1,14 @@
 #graphHolder {
   flex: 1;
   display: grid;
+  overflow: visible;
 }
 
 svg#graph {
   margin: auto;
   user-select: none;
   max-height: 100%;
+  overflow: visible;
 
   text {
     font-size: .18rem;
